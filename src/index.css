@@ -2,95 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/*
+  V-Signal — vaalea paperi -designsysteemi.
+  Värit ovat HSL-muodossa Tailwindin tokeneja varten.
+  Lisäksi muutama brändi-spesifinen muuttuja (kulta, funktio- ja vanavesivärit)
+  joita käytetään suoraan tailwind.config.ts:n kautta.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Paperinomainen pohja */
+    --background: 41 33% 93%;          /* #f4f1ea */
+    --foreground: 222 17% 12%;         /* #1a1d24 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --paper: 42 38% 96%;               /* #faf8f3 */
+    --paper-deep: 41 33% 91%;          /* #f0ece2 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --card: 42 38% 96%;
+    --card-foreground: 222 17% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --popover: 42 38% 96%;
+    --popover-foreground: 222 17% 12%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --primary: 222 17% 12%;
+    --primary-foreground: 42 38% 96%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: 41 33% 88%;
+    --secondary-foreground: 222 17% 12%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 41 25% 86%;
+    --muted-foreground: 224 7% 38%;    /* #62656d */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 36 79% 30%;              /* kulta #8a6510 */
+    --accent-foreground: 42 38% 96%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 11 70% 39%;         /* korjaava #a8401f */
+    --destructive-foreground: 42 38% 96%;
+
+    --border: 222 17% 12% / 0.10;
+    --input: 222 17% 12% / 0.10;
+    --ring: 36 79% 30%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Brändimuuttujat (suora käyttö CSS-muuttujina) */
+    --gold: #8a6510;
+    --gold-soft: rgba(138,101,16,0.12);
+    --ink: #1a1d24;
+    --ink-soft: #2c3038;
+    --ink-mute: #62656d;
+    --ink-faint: #989aa2;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Funktiovärit */
+    --fn-vahvistava: #2f6b46;
+    --fn-varautuminen: #2c5a8a;
+    --fn-korjaava: #a8401f;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Vanavesivärit */
+    --wake-individual: #3f8055;
+    --wake-cohort: #a85d3f;
+    --wake-state: #2c5a8a;
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (säilytetään shadcn-yhteensopivuus) */
+    --sidebar-background: 42 38% 96%;
+    --sidebar-foreground: 222 17% 12%;
+    --sidebar-primary: 222 17% 12%;
+    --sidebar-primary-foreground: 42 38% 96%;
+    --sidebar-accent: 41 33% 88%;
+    --sidebar-accent-foreground: 222 17% 12%;
+    --sidebar-border: 41 33% 85%;
+    --sidebar-ring: 36 79% 30%;
   }
 
+  /* Vaalea paperi -tyylissä ei käytetä tummaa teemaa, mutta säilytetään
+     dark-luokka shadcn-komponenttien yhteensopivuuden vuoksi. */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 222 17% 8%;
+    --foreground: 42 38% 96%;
+    --paper: 222 17% 12%;
+    --paper-deep: 222 17% 16%;
+    --card: 222 17% 12%;
+    --card-foreground: 42 38% 96%;
+    --popover: 222 17% 12%;
+    --popover-foreground: 42 38% 96%;
+    --primary: 42 38% 96%;
+    --primary-foreground: 222 17% 12%;
+    --secondary: 222 17% 16%;
+    --secondary-foreground: 42 38% 96%;
+    --muted: 222 17% 16%;
+    --muted-foreground: 41 25% 75%;
+    --accent: 36 60% 55%;
+    --accent-foreground: 222 17% 12%;
+    --destructive: 11 60% 50%;
+    --destructive-foreground: 42 38% 96%;
+    --border: 42 38% 96% / 0.10;
+    --input: 42 38% 96% / 0.10;
+    --ring: 36 60% 55%;
   }
 }
 
@@ -98,8 +105,83 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
-  body {
-    @apply bg-background text-foreground;
+  html {
+    scroll-behavior: smooth;
   }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-rendering: optimizeLegibility;
+    line-height: 1.65;
+  }
+  ::selection {
+    background: rgba(138,101,16,0.25);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  .font-serif {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+  .font-mono {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .lede {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.5;
+  }
+  .paper {
+    background: hsl(var(--paper));
+    border: 1px solid rgba(26,29,36,0.08);
+    border-radius: 8px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 18px 50px -25px rgba(26,29,36,0.18);
+  }
+  .paper-deep {
+    background: hsl(var(--paper-deep));
+  }
+  .gold-mark {
+    border-left: 2px solid var(--gold);
+    padding-left: 1rem;
+    background: linear-gradient(90deg, rgba(138,101,16,0.06), transparent 60%);
+  }
+  .info-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.05em;
+    height: 1.05em;
+    margin-left: 0.25em;
+    border: 1px solid var(--gold);
+    border-radius: 999px;
+    color: var(--gold);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7em;
+    line-height: 1;
+    cursor: help;
+    text-decoration: none;
+    vertical-align: 0.05em;
+    background: transparent;
+    transition: background 0.15s;
+  }
+  .info-mark:hover {
+    background: var(--gold-soft);
+  }
+}
+
+@media print {
+  body { background: white; }
+  .info-mark { border-color: #999; color: #555; }
 }

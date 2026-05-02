@@ -1,0 +1,239 @@
+/**
+ * Reseptien metadata.
+ *
+ * Säilyttää alkuperäisen v-signal-lukijan 6 reseptiä ja lisää 4 uutta
+ * (counterfactual, drift, leverage, policy_lag), jotka vastaavat
+ * 50 v. kausaalipolkuun, ajauma-ennusteeseen ja nivelkohtien tunnistamiseen.
+ *
+ * Käytetään lukijassa (`i`-tooltipit + menetelmäkortit), navigaattorissa
+ * (resepti-overlayt) ja reseptimyllyssä (10 reseptin painikepaneeli).
+ */
+
+export type RecipeCategory = "linja" | "vaesto" | "mekanismi" | "tulevaisuus" | "interventio";
+
+export interface Recipe {
+  id: string;
+  view: string;          // Supabase-näkymän nimi
+  title: string;
+  category: RecipeCategory;
+  isNew?: boolean;       // Uudet reseptit korostetaan
+  oneliner: string;      // Lyhyt kuvaus tooltipiin
+  question: string;      // Päätutkimuskysymys
+  inputs: string[];
+  timeRange: string;
+  assumptions: string[];
+  limits: string[];
+  sqlSketch: string;
+}
+
+export const RECIPES: Record<string, Recipe> = {
+  // ── Olemassa olevat 6 reseptiä ─────────────────────────────
+  lifecycle: {
+    id: "lifecycle",
+    view: "v_signal_lifecycle",
+    title: "Elinkaarivirta",
+    category: "linja",
+    oneliner: "Seuraa väestöryhmän kustannuksia ja tukia syntymästä eläkeikään.",
+    question: "Miten yhden vuosikymmenen kohortti rasittaa ja tukee järjestelmää eri ikävaiheissa?",
+    inputs: [
+      "Tilastokeskus: väestö ja ikäjakaumat",
+      "THL: terveys- ja sosiaalimenot ikäluokittain",
+      "Kela: etuudet ikäluokittain",
+    ],
+    timeRange: "1970–2024 (havainto), 2025–2040 (projektio)",
+    assumptions: [
+      "Reaalihinnat 2024-tasossa, BKT-deflaattori",
+      "Ikäluokat 5-vuotisportain",
+      "Terveyskustannukset jaettu pää-ICD-luokan mukaan",
+    ],
+    limits: [
+      "Yksityisrahoitteinen hoito puuttuu osittain ennen vuotta 2000",
+      "Projektio olettaa nykyisen palvelurakenteen jatkuvan",
+    ],
+    sqlSketch:
+      "SELECT cohort_year, age_bucket,\n       SUM(cost_real) AS cost,\n       SUM(transfer_real) AS transfers\nFROM fact_age_costs\nJOIN dim_cohort USING (cohort_year)\nGROUP BY 1, 2;",
+  },
+  elasticity: {
+    id: "elasticity",
+    view: "v_signal_elasticity",
+    title: "Joustavuus",
+    category: "mekanismi",
+    oneliner: "Paljonko meno reagoi, kun kysyntä tai väestö muuttuu 1 %.",
+    question: "Mitkä järjestelmän osat venyvät kysynnän mukana ja mitkä jäävät jumiin?",
+    inputs: ["THL: hoitokäynnit ja kustannukset", "Tilastokeskus: väestöprojektiot"],
+    timeRange: "2000–2024",
+    assumptions: ["Log-log -regressio 5 v. liukuvalla ikkunalla", "Kontrolloi BKT-syklin ja inflaation"],
+    limits: ["Pandemiavuosi 2020 käsitelty erillisellä dummyllä", "Pieniä alueita ei eritellä"],
+    sqlSketch:
+      "SELECT segment,\n       regr_slope(ln(spend), ln(demand)) AS elasticity\nFROM v_segment_panel\nGROUP BY segment;",
+  },
+  trend: {
+    id: "trend",
+    view: "v_signal_trend",
+    title: "Trendinmurros",
+    category: "linja",
+    oneliner: "Tunnistaa pitkän trendin taittumiskohdat segmenteittäin.",
+    question: "Milloin kehityksen suunta on muuttunut — ja oliko muutos politiikkaa vai demografiaa?",
+    inputs: ["Yhdistetty paneeli: THL + Kela + Tilastokeskus"],
+    timeRange: "1980–2024",
+    assumptions: ["Bayesilainen muutospistemalli (prior 1 muutos / 12 v.)", "Vakautus rahanarvoon"],
+    limits: ["Tunnistaa vain rakenteelliset murrokset, ei lyhyitä shokkeja"],
+    sqlSketch:
+      "SELECT segment, year, level,\n       structural_break(level) OVER (PARTITION BY segment ORDER BY year) AS bp\nFROM v_segment_panel;",
+  },
+  funding_paradox: {
+    id: "funding_paradox",
+    view: "v_signal_funding_paradox",
+    title: "Rahoitusparadoksi",
+    category: "mekanismi",
+    oneliner: "Tunnistaa kohdat, joissa rahoitus kasvaa mutta tulokset eivät — tai päinvastoin.",
+    question: "Mihin lisäraha menee tehottomasti, ja missä saadaan tuloksia ilman lisärahaa?",
+    inputs: ["Valtion talousarvio (sektorikohtaiset menot)", "THL: tulosindikaattorit"],
+    timeRange: "1995–2024",
+    assumptions: ["Tulosindikaattori normalisoitu 2010=100", "5 v. viive rahoitus → tulos"],
+    limits: ["Tulosindikaattorit eivät kata kaikkia palveluita yhtä hyvin"],
+    sqlSketch:
+      "SELECT sector, year,\n       spend_idx, outcome_idx,\n       (spend_idx - outcome_idx) AS gap\nFROM v_sector_panel;",
+  },
+  data_gap: {
+    id: "data_gap",
+    view: "v_signal_data_gap",
+    title: "Datan katve",
+    category: "mekanismi",
+    oneliner: "Näyttää mistä järjestelmän osista ei ole tiedettävissä riittävästi.",
+    question: "Missä päätöksiä tehdään ilman näkyvyyttä — ja kuka kärsii katveesta?",
+    inputs: ["Rekisterien kattavuusarviot", "THL ja Kela vertailupaneeli"],
+    timeRange: "2000–2024",
+    assumptions: ["Kattavuus = mitattu / arvioitu kokonaisvolyymi"],
+    limits: ["Yksityispalvelut ja työterveyden alueet vain osin tiedossa"],
+    sqlSketch:
+      "SELECT segment, channel,\n       coverage_pct\nFROM v_data_coverage\nWHERE coverage_pct < 0.6;",
+  },
+  comparison_pair: {
+    id: "comparison_pair",
+    view: "v_signal_comparison_pair",
+    title: "Vertailupari",
+    category: "vaesto",
+    oneliner: "Vertailee kahta kohorttia samassa elämänvaiheessa.",
+    question: "Miten sama elämänvaihe näyttäytyi 1970-luvulla syntyneelle ja 2000-luvulla syntyneelle?",
+    inputs: ["Kohorttipaneeli (THL + Kela + Tilastokeskus)"],
+    timeRange: "1975–2024",
+    assumptions: ["Ikävakiointi 5-vuotisportain", "Inflaatiokorjaus"],
+    limits: ["Kohorttien rajat eivät ole täysin yhteismitalliset palveluvalikoiman muutosten vuoksi"],
+    sqlSketch:
+      "SELECT a.metric, a.value AS cohort_a, b.value AS cohort_b\nFROM v_cohort_panel a JOIN v_cohort_panel b USING (metric, age)\nWHERE a.cohort = $1 AND b.cohort = $2;",
+  },
+
+  // ── Uudet 4 reseptiä ───────────────────────────────────────
+  counterfactual: {
+    id: "counterfactual",
+    view: "v_signal_counterfactual",
+    title: "Counterfactual — mitä jos toimittu ajoissa",
+    category: "interventio",
+    isNew: true,
+    oneliner: "Vertaa toteutunutta polkua simuloituun, jossa interventio olisi tehty ajoissa.",
+    question: "Mitä jätettiin tekemättä, ja paljonko se on maksanut työkykyvuosina ja euroina?",
+    inputs: [
+      "Toteutunut sektori- ja kohorttipaneeli",
+      "Interventiomalli: vaikutuskertoimet vertaismaista (Ruotsi, Tanska, Norja)",
+      "Diffuusioviive 3–7 v. päätöksen ja tuloksen välillä",
+    ],
+    timeRange: "1985–2024 toteuma + counterfactual",
+    assumptions: [
+      "Lineaarinen vasteoletus pienillä muutoksilla",
+      "Vertaismaiden vaikutuskerroin sovellettu Suomen tasoon BKT/asukas-suhteella",
+    ],
+    limits: [
+      "Counterfactual on simulaatio, ei mittaus",
+      "Suuret rakennemuutokset (esim. SOTE) jätetty pois ekstrapolaatioista",
+    ],
+    sqlSketch:
+      "SELECT year, segment,\n       actual_value,\n       counterfactual_value,\n       (counterfactual_value - actual_value) AS shortfall\nFROM v_intervention_simulation\nWHERE intervention_id = $1;",
+  },
+  drift: {
+    id: "drift",
+    view: "v_signal_drift",
+    title: "Drift-projektio 2035 / 2045",
+    category: "tulevaisuus",
+    isNew: true,
+    oneliner: "Ekstrapoloi nykytrendit 10 ja 20 v. päähän kolmena polkuna.",
+    question: "Mihin järjestelmä on ajautumassa, ja mitä eri toimintapolitiikat muuttavat?",
+    inputs: [
+      "Trendinmurros-resepti (lähtötaso ja kulmakerroin)",
+      "Tilastokeskuksen väestöprojektio 2045",
+      "Politiikkaherkkyysparametrit (varovainen / voimakas interventio)",
+    ],
+    timeRange: "2024 → 2045",
+    assumptions: [
+      "Polku 1: nykytrendi jatkuu",
+      "Polku 2: 30 % vähennys uusiin alkavuuksiin 5 v. kuluessa",
+      "Polku 3: 60 % vähennys + ennakoiva nivelkohta-investointi",
+    ],
+    limits: [
+      "Ekstrapolaatio ei tunnista mustia joutsenia (pandemia, sota)",
+      "Luottamusväli kasvaa eksponentiaalisesti vuodesta 2035 eteenpäin",
+    ],
+    sqlSketch:
+      "SELECT year, segment, scenario,\n       value, ci_low, ci_high\nFROM v_signal_drift\nWHERE year BETWEEN 2024 AND 2045;",
+  },
+  leverage: {
+    id: "leverage",
+    view: "v_signal_leverage",
+    title: "Leverage-pisteet",
+    category: "interventio",
+    isNew: true,
+    oneliner: "Kustannustehokkaimmat interventiopisteet elinkaarella (€/säilytetty työvuosi).",
+    question: "Missä elämänvaiheissa pieni panos tuottaa suurimman vaikutuksen?",
+    inputs: [
+      "Counterfactual-reseptin tulokset segmenteittäin",
+      "Interventiokustannukset (THL, OECD)",
+      "Vaikutuksen kesto-oletus (5–30 v.)",
+    ],
+    timeRange: "Elinkaari 0–80 v.",
+    assumptions: [
+      "ROI = säilytetty työvuosi tai estetty palvelukäyttö / interventiokustannus",
+      "Diskonttokorko 3 % / v.",
+    ],
+    limits: [
+      "Ei kata kaikkia interventioita — vain ne joista on mittaustietoa",
+      "ROI-arviot herkkiä vaikutuksen kestoletukselle",
+    ],
+    sqlSketch:
+      "SELECT life_stage, intervention,\n       cost_per_unit, effect_per_unit,\n       roi_ratio\nFROM v_signal_leverage\nORDER BY roi_ratio DESC;",
+  },
+  policy_lag: {
+    id: "policy_lag",
+    view: "v_signal_policy_lag",
+    title: "Policy lag — kausaaliketju",
+    category: "tulevaisuus",
+    isNew: true,
+    oneliner: "Mallintaa viiveen päätös → toteutus → mitattava tulos sektoreittain.",
+    question: "Milloin tämän päivän päätös alkaa näkyä mittareissa?",
+    inputs: [
+      "Politiikkapäätösten aikajana (HE-numerot, eduskuntakirjaukset)",
+      "Toteutusviive sektoreittain",
+      "Tulosindikaattorin reagointiaika",
+    ],
+    timeRange: "1995–2024 + 2025–2035 projektio",
+    assumptions: [
+      "Lag-jakauma sektoreittain: SOTE 8–12 v., koulutus 12–18 v., eläkkeet 20–40 v.",
+      "Päätöksen voimakkuus skaalattu valtion talousarvion sektoriosuuteen",
+    ],
+    limits: [
+      "Yksittäinen lakimuutos vaikuttaa harvoin yksittäiseen indikaattoriin puhtaasti",
+      "Vaikutusten päällekkäisyys hankaloittaa tunnistamista",
+    ],
+    sqlSketch:
+      "SELECT decision_year, sector, decision_id,\n       impact_year, indicator, impact_size\nFROM v_signal_policy_lag\nORDER BY decision_year, sector;",
+  },
+};
+
+export const RECIPE_LIST: Recipe[] = Object.values(RECIPES);
+
+export const RECIPE_CATEGORIES: Record<RecipeCategory, { label: string; description: string }> = {
+  linja: { label: "Linjat", description: "Pitkän aikavälin trendit ja taittumiskohdat" },
+  vaesto: { label: "Väestö", description: "Kohorttien ja ikäluokkien välinen vertailu" },
+  mekanismi: { label: "Mekanismit", description: "Miksi näin kävi" },
+  tulevaisuus: { label: "Tulevaisuus", description: "Ennusteet ja viiveet" },
+  interventio: { label: "Interventiot", description: "Mitä voitaisiin tehdä, missä, milloin" },
+};
