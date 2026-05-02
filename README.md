@@ -1,3 +1,1 @@
-# Welcome to your Lovable project
-
-TODO: Document your project here
+# Tervetuloa tutustumaan TTT-analyysiin Suomen hyvinvointijärjstelmästä
