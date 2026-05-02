@@ -24,7 +24,7 @@ const App = () => (
     <TooltipProvider delayDuration={150}>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <div className="min-h-screen flex flex-col">
           <TopNav />
           <main className="flex-1">
