@@ -128,7 +128,7 @@ export const DriftChart = () => {
             />
             <Line type="monotone" dataKey="nykytrendi" stroke={SCENARIO_COLOR.nykytrendi} strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="varovainen" stroke={SCENARIO_COLOR.varovainen} strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="voimakas" stroke={SCENARIO_COLOR.vahvistava ?? SCENARIO_COLOR.voimakas} strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="voimakas" stroke={SCENARIO_COLOR.voimakas} strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
