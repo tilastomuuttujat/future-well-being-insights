@@ -20,6 +20,9 @@ import {
 import { autoSelect } from "@/features/navigator/auto";
 import { LensRenderer } from "@/features/navigator/LensRenderers";
 import { useNavigatorUrlSync } from "@/features/navigator/useNavigatorUrlSync";
+import { CoveragePanel } from "@/features/navigator/CoveragePanel";
+import { InsightIntro } from "@/features/navigator/InsightIntro";
+import { StoryMode } from "@/features/navigator/StoryMode";
 
 /**
  * /navigaattori/kartta — natiivi React-portti TTT-Navigaattorista.
@@ -110,10 +113,15 @@ const NavigaattoriKartta = () => {
             Lukittu
           </button>
         </div>
-        <div className="text-[11px] font-mono text-ink-mute">
-          {activeYear} · {TIME_LABELS[activeTime]} · {FN_LABEL[activeCluster.fn]}
+        <div className="flex items-center gap-3">
+          <StoryMode />
+          <div className="text-[11px] font-mono text-ink-mute">
+            {activeYear} · {TIME_LABELS[activeTime]} · {FN_LABEL[activeCluster.fn]}
+          </div>
         </div>
       </div>
+
+      <InsightIntro cluster={activeCluster} time={activeTime} year={activeYear} wake={activeWake} />
 
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 2fr 1fr", gridTemplateRows: "auto auto" }}>
         <CornerCard corner="tl" ctx={ctx} views={views} setView={setView} lensMode={lensMode} onZoom={() => setZoom("tl")} />
@@ -125,8 +133,12 @@ const NavigaattoriKartta = () => {
         <CornerCard corner="br" ctx={ctx} views={views} setView={setView} lensMode={lensMode} onZoom={() => setZoom("br")} />
       </div>
 
+      <div className="mt-4">
+        <CoveragePanel cluster={activeCluster} time={activeTime} year={activeYear} wake={activeWake} views={views} />
+      </div>
+
       <p className="text-[11px] text-ink-mute font-mono mt-4">
-        Erä 3 · lens memory · URL-state · klikkaa, raahaa tai käytä nuolinäppäimiä
+        Erä 4 · coverage · insight-intro · tarinatila valmiina
       </p>
 
       {zoomed && (
