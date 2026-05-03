@@ -19,6 +19,7 @@ import {
   worldXToYear,
 } from "@/features/navigator/constants";
 import { autoSelect } from "@/features/navigator/auto";
+import { LensRenderer } from "@/features/navigator/LensRenderers";
 
 /**
  * /navigaattori/kartta — natiivi React-portti TTT-Navigaattorista.
@@ -122,7 +123,7 @@ const NavigaattoriKartta = () => {
       </div>
 
       <p className="text-[11px] text-ink-mute font-mono mt-4">
-        Erä 1 · canvas + auto-pisteytys · kulmanäkymien visualisoinnit tulevat erässä 2
+        Erä 2 · linssikomponentit aktiiviset · seuraavaksi lens memory + URL-state
       </p>
     </div>
   );
@@ -168,11 +169,17 @@ const CornerCard = ({
         ))}
       </select>
 
-      <div className="flex-1 grid place-items-center text-center text-ink-mute text-xs italic font-serif">
-        {available.find((v) => v.id === current)?.label || current}
-        <span className="block text-[10px] not-italic font-mono text-ink-faint mt-1">
-          (visualisointi tulossa Erässä 2)
-        </span>
+      <div className="flex-1 min-h-[140px]">
+        <LensRenderer
+          view={current}
+          corner={corner}
+          ctx={{
+            cluster: ctx.activeCluster,
+            time: ctx.activeTime,
+            year: ctx.activeYear,
+            wake: ctx.activeWake,
+          }}
+        />
       </div>
 
       {views[corner] === "auto" && (
