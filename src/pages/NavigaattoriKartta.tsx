@@ -133,8 +133,12 @@ const NavigaattoriKartta = () => {
         <CornerCard corner="br" ctx={ctx} views={views} setView={setView} lensMode={lensMode} onZoom={() => setZoom("br")} />
       </div>
 
+      <div className="mt-4">
+        <CoveragePanel cluster={activeCluster} time={activeTime} year={activeYear} wake={activeWake} views={views} />
+      </div>
+
       <p className="text-[11px] text-ink-mute font-mono mt-4">
-        Erä 3 · lens memory · URL-state · klikkaa, raahaa tai käytä nuolinäppäimiä
+        Erä 4 · coverage · insight-intro · tarinatila valmiina
       </p>
 
       {zoomed && (
