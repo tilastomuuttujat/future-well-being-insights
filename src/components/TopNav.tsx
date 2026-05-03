@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 const links = [
   { to: "/", label: "Lukija", end: true },
   { to: "/navigaattori", label: "Navigaattori" },
+  { to: "/navigaattori/kartta", label: "Kartta" },
   { to: "/reseptit", label: "Reseptit" },
 ];
 
