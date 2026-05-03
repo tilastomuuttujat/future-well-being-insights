@@ -17,9 +17,9 @@ import {
 /**
  * NavigatorStage — SVG-pohjainen klusteri × aika × vanavesi -kartta.
  *
- * Erä 1: pan/zoom (drag + wheel + touch), klusteririvit, vanavesilinjat,
- * keskeltä nykyhetken risti, HUD oikeassa yläkulmassa, aikajana alhaalla.
- * Kulmanäkymät (tl/tr/bl/br) tulevat Erässä 2.
+ * Erä 3: lisätty näppäimistönavigointi (nuolet/Shift+nuolet),
+ * klikkaa-rivi-fokukseen, klikkaa-vanavesi → siirry tapahtuma-aikaan,
+ * tuplaklikkaus = nollaa näkymä YEAR_NOW + valittuun klusteriin.
  */
 export const NavigatorStage = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -44,23 +44,25 @@ export const NavigatorStage = () => {
     return () => ro.disconnect();
   }, [setSize]);
 
-  // Pan: hiiri/sormi
+  // Pan: hiiri/sormi + näppäimet
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     let dragging = false;
+    let moved = false;
     let lx = 0;
     let ly = 0;
     const down = (e: PointerEvent) => {
-      dragging = true; lx = e.clientX; ly = e.clientY;
+      dragging = true; moved = false; lx = e.clientX; ly = e.clientY;
       el.setPointerCapture(e.pointerId);
+      el.focus();
     };
     const move = (e: PointerEvent) => {
       if (!dragging) return;
       const dx = e.clientX - lx;
       const dy = e.clientY - ly;
+      if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
       lx = e.clientX; ly = e.clientY;
-      // Liike: vasemmalle vetäminen siirtää keskustaa oikealle (eteen ajassa)
       panBy(-dx, -dy * 0.5);
     };
     const up = (e: PointerEvent) => {
@@ -69,21 +71,37 @@ export const NavigatorStage = () => {
     };
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
-      // Shift+wheel = pysty, muuten vaaka
       if (e.shiftKey) panBy(0, e.deltaY * 0.5);
       else panBy(e.deltaY * 0.6, 0);
+    };
+    const key = (e: KeyboardEvent) => {
+      const big = e.shiftKey ? 5 : 1;
+      const xStep = 22 * big; // 1 vuosi = 22 px
+      const yStep = ROW_PX * (e.shiftKey ? 1 : 1);
+      switch (e.key) {
+        case "ArrowLeft":  panBy(-xStep, 0); e.preventDefault(); break;
+        case "ArrowRight": panBy(xStep, 0); e.preventDefault(); break;
+        case "ArrowUp":    panBy(0, -yStep); e.preventDefault(); break;
+        case "ArrowDown":  panBy(0, yStep); e.preventDefault(); break;
+        case "Home":       useNavStore.getState().setCenter(yearToWorldX(2024), useNavStore.getState().cy); e.preventDefault(); break;
+      }
     };
     el.addEventListener("pointerdown", down);
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", up);
     el.addEventListener("pointercancel", up);
     el.addEventListener("wheel", wheel, { passive: false });
+    el.addEventListener("keydown", key);
+    // Poista markkeri "moved" pointerup:n jälkeen yhden tickin viiveellä,
+    // jotta klikkaus erottuu vetämisestä.
+    (el as any)._wasMoved = () => moved;
     return () => {
       el.removeEventListener("pointerdown", down);
       el.removeEventListener("pointermove", move);
       el.removeEventListener("pointerup", up);
       el.removeEventListener("pointercancel", up);
       el.removeEventListener("wheel", wheel);
+      el.removeEventListener("keydown", key);
     };
   }, [panBy]);
 
@@ -104,29 +122,39 @@ export const NavigatorStage = () => {
     [activeCluster, activeYear],
   );
 
-  // Kuvataso: maailmasta näytöksi (cx,cy on keskellä)
-  const sw = w; // square stage
+  const sw = w;
   const sh = h;
   const toScreenX = (worldX: number) => sw / 2 + (worldX - cx);
   const toScreenY = (worldY: number) => sh / 2 + (worldY - cy);
+  const screenToWorldX = (sx: number) => sx - sw / 2 + cx;
+  const screenToWorldY = (sy: number) => sy - sh / 2 + cy;
 
-  // Aikajana — vuosi-ticit 5v välein, dekadit korostettu
   const xTicks: number[] = [];
   for (let y = YEAR_MIN; y <= YEAR_MAX; y += 5) xTicks.push(y);
 
   const fnColor = FN_COLOR[activeCluster.fn];
 
+  // Klikkaus → fokus
+  const onSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const moved = (ref.current as any)?._wasMoved?.();
+    if (moved) return;
+    const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    setCenter(screenToWorldX(sx), screenToWorldY(sy));
+  };
+
   return (
     <div
       ref={ref}
-      className="relative w-full aspect-square select-none touch-none cursor-grab active:cursor-grabbing"
+      tabIndex={0}
+      className="relative w-full aspect-square select-none touch-none cursor-grab active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40"
       style={{ background: "var(--paper-deep, #faf8f3)" }}
       role="application"
-      aria-label="TTT-Navigaattori — vedä liikuttaaksesi karttaa"
+      aria-label="TTT-Navigaattori — vedä, klikkaa tai käytä nuolinäppäimiä"
     >
       {sw > 0 && (
-        <svg width={sw} height={sh} className="absolute inset-0">
-          {/* paperitausta-viivat */}
+        <svg width={sw} height={sh} className="absolute inset-0" onClick={onSvgClick}>
           <defs>
             <pattern id="paperGrid" width="22" height="44" patternUnits="userSpaceOnUse">
               <path d="M 0 44 L 22 44" stroke="rgba(26,29,36,0.04)" strokeWidth="1" />
@@ -134,7 +162,6 @@ export const NavigatorStage = () => {
           </defs>
           <rect width={sw} height={sh} fill="url(#paperGrid)" />
 
-          {/* Vuosiristikko */}
           {xTicks.map((y) => {
             const x = toScreenX(yearToWorldX(y));
             if (x < -10 || x > sw + 10) return null;
@@ -149,7 +176,6 @@ export const NavigatorStage = () => {
             );
           })}
 
-          {/* Klusteririvit */}
           {CLUSTERS.map((c, i) => {
             const yWorld = i * ROW_PX;
             const yScreen = toScreenY(yWorld);
@@ -178,7 +204,6 @@ export const NavigatorStage = () => {
             );
           })}
 
-          {/* Vanavedet — kolme pistettä + viiva */}
           {WAKES.map((wk, idx) => {
             const rows = wk.clusters
               .map((cid) => CLUSTERS.findIndex((c) => c.id === cid))
@@ -192,6 +217,11 @@ export const NavigatorStage = () => {
             const xC = toScreenX(yearToWorldX(wk.indiv));
             const isActive = activeWake?.theme === wk.theme;
             const stroke = isActive ? "var(--gold, #8a6510)" : "rgba(26,29,36,0.22)";
+            const dots: Array<[number, number, string, number, string]> = [
+              [xA, yA, "S", wk.state, wk.clusters[0]],
+              [xB, yB, "K", wk.cohort, wk.clusters[1]],
+              [xC, yC, "Y", wk.indiv,  wk.clusters[2]],
+            ];
             return (
               <g key={idx} opacity={isActive ? 1 : 0.55}>
                 <path
@@ -201,17 +231,24 @@ export const NavigatorStage = () => {
                   strokeWidth={isActive ? 1.6 : 0.8}
                   strokeDasharray={isActive ? undefined : "3 4"}
                 />
-                {[ [xA,yA,"S"], [xB,yB,"K"], [xC,yC,"Y"] ].map(([x,y,t], i) => (
-                  <g key={i}>
-                    <circle cx={x as number} cy={y as number} r={isActive ? 4 : 3} fill="var(--paper, #f4f1ea)" stroke={stroke} />
-                    <text x={x as number} y={(y as number) + 3} textAnchor="middle" fontSize={7} fontFamily="JetBrains Mono, monospace" fill={stroke}>{t}</text>
+                {dots.map(([x, y, t, year, cid], i) => (
+                  <g
+                    key={i}
+                    style={{ cursor: "pointer" }}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      const row = CLUSTERS.findIndex((c) => c.id === cid);
+                      setCenter(yearToWorldX(year), row >= 0 ? row * ROW_PX : cy);
+                    }}
+                  >
+                    <circle cx={x} cy={y} r={isActive ? 5 : 3.5} fill="var(--paper, #f4f1ea)" stroke={stroke} />
+                    <text x={x} y={y + 3} textAnchor="middle" fontSize={7} fontFamily="JetBrains Mono, monospace" fill={stroke}>{t}</text>
                   </g>
                 ))}
               </g>
             );
           })}
 
-          {/* YEAR_NOW -viiva */}
           {(() => {
             const x = toScreenX(yearToWorldX(2024));
             return (
@@ -220,7 +257,6 @@ export const NavigatorStage = () => {
             );
           })()}
 
-          {/* Keskusristi (käyttäjän fokus) */}
           <g pointerEvents="none">
             <line x1={sw/2 - 16} x2={sw/2 + 16} y1={sh/2} y2={sh/2} stroke={fnColor} strokeWidth={1.2} />
             <line x1={sw/2} x2={sw/2} y1={sh/2 - 16} y2={sh/2 + 16} stroke={fnColor} strokeWidth={1.2} />
@@ -229,7 +265,6 @@ export const NavigatorStage = () => {
         </svg>
       )}
 
-      {/* HUD oikeassa yläkulmassa */}
       <div className="absolute top-3 right-3 paper px-3 py-2 text-[11px] font-mono leading-relaxed pointer-events-none max-w-[260px]">
         <div className="flex items-center gap-2">
           <span style={{ background: fnColor }} className="inline-block w-2 h-2 rounded-full" />
@@ -243,12 +278,10 @@ export const NavigatorStage = () => {
         )}
       </div>
 
-      {/* Vinkki */}
       <div className="absolute bottom-3 left-3 text-[10px] font-mono text-ink-mute pointer-events-none">
-        Vedä · vieritä = aika · shift+vieritä = klusterit
+        Vedä · klikkaa · ← → ↑ ↓ · vieritä = aika · shift+vieritä = klusterit
       </div>
 
-      {/* Aikajana keskellä alhaalla */}
       <div className="absolute bottom-8 left-0 right-0 pointer-events-none">
         <input
           type="range"
