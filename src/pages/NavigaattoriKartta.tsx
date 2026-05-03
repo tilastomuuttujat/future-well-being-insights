@@ -123,7 +123,7 @@ const NavigaattoriKartta = () => {
       </div>
 
       <p className="text-[11px] text-ink-mute font-mono mt-4">
-        Erä 1 · canvas + auto-pisteytys · kulmanäkymien visualisoinnit tulevat erässä 2
+        Erä 2 · linssikomponentit aktiiviset · seuraavaksi lens memory + URL-state
       </p>
     </div>
   );
