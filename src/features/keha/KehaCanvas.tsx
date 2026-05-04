@@ -198,8 +198,10 @@ export function KehaCanvas({ onSelect, highlight, onPointsReady }: Props) {
           const isSelA = sel.A?.d.id === p.d.id;
           const isSelB = sel.B?.d.id === p.d.id;
           const r = (isSelA || isSelB) ? (isSec ? 7 : 5.5) : (isSec ? 4.8 : 3.0);
+          const dim = isDim(p.d.cid);
           return (
-            <circle key={p.d.id} cx={p.sx} cy={p.sy} r={r} fill={col} fillOpacity={0.82}
+            <circle key={p.d.id} cx={p.sx} cy={p.sy} r={r} fill={col}
+              fillOpacity={dim ? 0.18 : 0.82}
               stroke={isSelA ? "#2d5a3d" : isSelB ? "#7a3010" : "rgba(255,255,255,0.6)"}
               strokeWidth={(isSelA || isSelB) ? 2 : 0.7}
               style={{ cursor: "pointer" }}
