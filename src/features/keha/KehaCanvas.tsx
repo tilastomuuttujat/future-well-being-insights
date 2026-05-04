@@ -15,15 +15,16 @@ interface LensPos { x: number; y: number; }
 
 interface Props {
   onSelect?: (sel: Sel) => void;
+  /** Korostetut klusterit (profiilin perusteella). Tyhjä = ei korostusta. */
+  highlight?: Set<string>;
+  /** Antaa pääkomponentille pääsyn kaikkiin sijoiteltuihin pisteisiin. */
+  onPointsReady?: (pts: PlacedPoint[]) => void;
 }
 
 /**
  * Kehänavigaattorin SVG-canvas — 1:1 portti naviga-10-2.html:n keskuskehästä.
- * - 15 klusteria tasajaolla (24°/klusteri)
- * - Pisteet Fibonacci-keilassa
- * - Kaksi raahattavaa suurennuslasilinssiä (A, B)
  */
-export function KehaCanvas({ onSelect }: Props) {
+export function KehaCanvas({ onSelect, highlight, onPointsReady }: Props) {
   const raw = useMemo<RawPoint[]>(() => generateRaw(), []);
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
