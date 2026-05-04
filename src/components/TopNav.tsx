@@ -4,6 +4,7 @@ const links = [
   { to: "/", label: "Lukija", end: true },
   { to: "/navigaattori", label: "Navigaattori" },
   { to: "/navigaattori/kartta", label: "Kartta" },
+  { to: "/navigaattori/keha", label: "Kehä" },
   { to: "/reseptit", label: "Reseptit" },
 ];
 
