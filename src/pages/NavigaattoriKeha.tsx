@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { KehaCanvas } from "@/features/keha/KehaCanvas";
+import { DecadeLens } from "@/features/keha/DecadeLens";
 import { PlacedPoint } from "@/features/keha/data";
 import {
   AREA_TABS, ASEMA, DEFAULT_PROFILE, ELAMANVAIHE, Profile,
@@ -147,8 +148,10 @@ const NavigaattoriKeha = () => {
         </aside>
       </div>
 
+      <DecadeLens phase={profile.elamanvaihe} area={profile.area} />
+
       <p className="text-[10px] text-ink-faint font-mono mt-4">
-        Erä 2 valmis · seuraavaksi vuosikymmenlinssi (1980→2024) ja korjausinvestoinnin paluukäyrä.
+        Erä 3 valmis · seuraavaksi profiilirail (suojaavat & riskitekijät) ja investointimodaali.
       </p>
     </div>
   );
