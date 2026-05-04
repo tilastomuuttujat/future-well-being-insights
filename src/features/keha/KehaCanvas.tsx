@@ -71,6 +71,11 @@ export function KehaCanvas({ onSelect, highlight, onPointsReady }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ilmoita pisteet ulospäin (löydöslistaa varten).
+  useEffect(() => { onPointsReady?.(pts); }, [pts, onPointsReady]);
+
+  const isDim = (cid: string) => !!highlight && highlight.size > 0 && !highlight.has(cid);
+
   // SVG <-> client-koordinaattimuunnos.
   const toSvg = (clientX: number, clientY: number) => {
     const svg = svgRef.current!;
