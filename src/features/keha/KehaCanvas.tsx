@@ -237,8 +237,10 @@ export function KehaCanvas({ onSelect, highlight, onPointsReady }: Props) {
           stroke="rgba(0,0,0,0.04)" strokeWidth={1} />
         {seeds.map((s) => {
           const sc = 18 / 20;
+          const dim = isDim(s.cluster.id);
+          const op = dim ? 0.25 : 1;
           return (
-            <g key={`icon-${s.cluster.id}`}>
+            <g key={`icon-${s.cluster.id}`} opacity={op}>
               <circle cx={s.ix} cy={s.iy} r={16} fill="rgba(255,254,248,0.92)"
                 stroke={s.col} strokeOpacity={0.25} strokeWidth={1} />
               <path d={ICONS[s.cluster.id] || ICONS.hallinto}
