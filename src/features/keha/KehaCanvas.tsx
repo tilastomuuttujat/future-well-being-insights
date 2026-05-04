@@ -15,15 +15,16 @@ interface LensPos { x: number; y: number; }
 
 interface Props {
   onSelect?: (sel: Sel) => void;
+  /** Korostetut klusterit (profiilin perusteella). Tyhjä = ei korostusta. */
+  highlight?: Set<string>;
+  /** Antaa pääkomponentille pääsyn kaikkiin sijoiteltuihin pisteisiin. */
+  onPointsReady?: (pts: PlacedPoint[]) => void;
 }
 
 /**
  * Kehänavigaattorin SVG-canvas — 1:1 portti naviga-10-2.html:n keskuskehästä.
- * - 15 klusteria tasajaolla (24°/klusteri)
- * - Pisteet Fibonacci-keilassa
- * - Kaksi raahattavaa suurennuslasilinssiä (A, B)
  */
-export function KehaCanvas({ onSelect }: Props) {
+export function KehaCanvas({ onSelect, highlight, onPointsReady }: Props) {
   const raw = useMemo<RawPoint[]>(() => generateRaw(), []);
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -69,6 +70,11 @@ export function KehaCanvas({ onSelect }: Props) {
     onSelect?.(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ilmoita pisteet ulospäin (löydöslistaa varten).
+  useEffect(() => { onPointsReady?.(pts); }, [pts, onPointsReady]);
+
+  const isDim = (cid: string) => !!highlight && highlight.size > 0 && !highlight.has(cid);
 
   // SVG <-> client-koordinaattimuunnos.
   const toSvg = (clientX: number, clientY: number) => {
@@ -192,8 +198,10 @@ export function KehaCanvas({ onSelect }: Props) {
           const isSelA = sel.A?.d.id === p.d.id;
           const isSelB = sel.B?.d.id === p.d.id;
           const r = (isSelA || isSelB) ? (isSec ? 7 : 5.5) : (isSec ? 4.8 : 3.0);
+          const dim = isDim(p.d.cid);
           return (
-            <circle key={p.d.id} cx={p.sx} cy={p.sy} r={r} fill={col} fillOpacity={0.82}
+            <circle key={p.d.id} cx={p.sx} cy={p.sy} r={r} fill={col}
+              fillOpacity={dim ? 0.18 : 0.82}
               stroke={isSelA ? "#2d5a3d" : isSelB ? "#7a3010" : "rgba(255,255,255,0.6)"}
               strokeWidth={(isSelA || isSelB) ? 2 : 0.7}
               style={{ cursor: "pointer" }}
@@ -229,8 +237,10 @@ export function KehaCanvas({ onSelect }: Props) {
           stroke="rgba(0,0,0,0.04)" strokeWidth={1} />
         {seeds.map((s) => {
           const sc = 18 / 20;
+          const dim = isDim(s.cluster.id);
+          const op = dim ? 0.25 : 1;
           return (
-            <g key={`icon-${s.cluster.id}`}>
+            <g key={`icon-${s.cluster.id}`} opacity={op}>
               <circle cx={s.ix} cy={s.iy} r={16} fill="rgba(255,254,248,0.92)"
                 stroke={s.col} strokeOpacity={0.25} strokeWidth={1} />
               <path d={ICONS[s.cluster.id] || ICONS.hallinto}
