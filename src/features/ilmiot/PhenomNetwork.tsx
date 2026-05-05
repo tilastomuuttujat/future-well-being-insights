@@ -177,6 +177,54 @@ export const PhenomNetwork = ({
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  // Drag-and-drop: yksittäisen solmun veto reheatää simulaation → kuminauhaefekti
+  const dragState = useRef<{ id: string; pointerId: number; moved: boolean } | null>(null);
+
+  const svgPoint = (clientX: number, clientY: number) => {
+    const g = gRef.current;
+    if (!g) return { x: 0, y: 0 };
+    const ctm = (g as SVGGraphicsElement).getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const pt = (svgRef.current as SVGSVGElement).createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  };
+
+  const onNodePointerDown = (id: string) => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    const node = nodes.find((n) => n.id === id);
+    if (!node) return;
+    try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch {}
+    dragState.current = { id, pointerId: e.pointerId, moved: false };
+    const sim = simRef.current;
+    if (sim) sim.alphaTarget(0.4).restart();
+    node.fx = node.x; node.fy = node.y;
+  };
+  const onNodePointerMove = (e: React.PointerEvent) => {
+    const ds = dragState.current;
+    if (!ds || ds.pointerId !== e.pointerId) return;
+    const node = nodes.find((n) => n.id === ds.id);
+    if (!node) return;
+    const { x, y } = svgPoint(e.clientX, e.clientY);
+    node.fx = x; node.fy = y;
+    ds.moved = true;
+  };
+  const onNodePointerUp = (id: string, kind: NodeKind) => (e: React.PointerEvent) => {
+    const ds = dragState.current;
+    if (!ds || ds.pointerId !== e.pointerId) return;
+    const node = nodes.find((n) => n.id === ds.id);
+    const sim = simRef.current;
+    if (sim) sim.alphaTarget(0);
+    if (node) { node.fx = null; node.fy = null; }
+    const moved = ds.moved;
+    dragState.current = null;
+    if (!moved) {
+      const focused = isFocus(kind, id);
+      onSelect?.(focused ? null : { kind, id });
+    }
+  };
+
   return (
     <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="xMidYMid meet"
