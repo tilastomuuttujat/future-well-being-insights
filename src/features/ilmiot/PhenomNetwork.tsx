@@ -386,8 +386,11 @@ export const PhenomNetwork = ({
 
           return (
             <g key={n.id} transform={`translate(${n.x},${n.y})`} data-node="1"
-              style={{ cursor: "pointer", pointerEvents: "all", touchAction: "manipulation" }}
-              onClick={(e) => { e.stopPropagation(); onSelect?.(focus ? null : { kind: "phenom", id: k }); }}>
+              style={{ cursor: "grab", pointerEvents: "all", touchAction: "none" }}
+              onPointerDown={onNodePointerDown(n.id)}
+              onPointerMove={onNodePointerMove}
+              onPointerUp={onNodePointerUp(n.id, "phenom")}
+              onPointerCancel={onNodePointerUp(n.id, "phenom")}>
               <circle r={focus ? 44 : 40} fill="url(#phenomFill)"
                 stroke={critical ? accent : "var(--ink)"}
                 strokeWidth={critical ? 2.5 : 1}
