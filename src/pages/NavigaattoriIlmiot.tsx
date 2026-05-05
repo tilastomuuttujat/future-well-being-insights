@@ -140,22 +140,24 @@ const NavigaattoriIlmiot = () => {
         </div>
 
         {/* Toggle-napit overlay-paneelien näkyvyyteen */}
-        <div className="absolute top-3 left-3 flex gap-1.5 z-10">
+        <div className="absolute top-3 left-3 flex gap-1.5 z-20">
           <button onClick={() => setShowDrivers((v) => !v)}
-            className="font-mono text-[10px] uppercase tracking-[0.14em] px-2.5 py-1 rounded border bg-paper/90 backdrop-blur"
+            className="font-mono text-[10px] uppercase tracking-[0.14em] px-3 py-1.5 rounded border backdrop-blur shadow-sm"
             style={{
               borderColor: showDrivers ? "var(--gold)" : "rgba(26,29,36,0.15)",
               color: showDrivers ? "var(--gold)" : "var(--ink-mute)",
+              background: "rgba(250,248,243,0.94)",
             }}>
             {showDrivers ? "◧ piilota driverit" : "◨ driverit"}
           </button>
         </div>
-        <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+        <div className="absolute top-3 right-3 flex gap-1.5 z-20">
           <button onClick={() => setShowInspect((v) => !v)}
-            className="font-mono text-[10px] uppercase tracking-[0.14em] px-2.5 py-1 rounded border bg-paper/90 backdrop-blur"
+            className="font-mono text-[10px] uppercase tracking-[0.14em] px-3 py-1.5 rounded border backdrop-blur shadow-sm"
             style={{
               borderColor: showInspect ? "var(--gold)" : "rgba(26,29,36,0.15)",
               color: showInspect ? "var(--gold)" : "var(--ink-mute)",
+              background: "rgba(250,248,243,0.94)",
             }}>
             {showInspect ? "skenaariot ◨" : "◧ skenaariot"}
           </button>
@@ -278,7 +280,7 @@ const NavigaattoriIlmiot = () => {
               return (
                 <button key={d.k}
                   onClick={() => setSel(sel?.id === d.k ? null : { kind: "phenom", id: d.k })}
-                  className="font-mono text-[10px] px-2 py-0.5 rounded border transition-colors bg-paper/90 backdrop-blur"
+                  className="font-mono text-[10px] px-2 py-0.5 rounded border transition-colors backdrop-blur"
                   style={{
                     borderColor: sel?.id === d.k ? color : "rgba(26,29,36,0.12)",
                     color,
