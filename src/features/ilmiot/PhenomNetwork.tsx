@@ -105,8 +105,9 @@ export const PhenomNetwork = ({
         .strength((d) => (d.kind === "driver" ? 0.18 : 0)))
       .alpha(1).alphaDecay(0.04);
 
+    simRef.current = sim;
     sim.on("tick", () => force((x) => x + 1));
-    return () => { sim.stop(); };
+    return () => { sim.stop(); simRef.current = null; };
   }, [nodes, links, width, height, phenKeys, driverKeys]);
 
   // d3-zoom: VAIN wheel + Ctrl/Meta zoomaa. Ei drag-pania, jotta klikkaus & touch
