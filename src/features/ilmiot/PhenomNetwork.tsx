@@ -42,6 +42,7 @@ export const PhenomNetwork = ({
 }: Props) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const gRef = useRef<SVGGElement | null>(null);
+  const simRef = useRef<d3.Simulation<SimNode, SimLink> | null>(null);
   const phenKeys = useMemo(() => Object.keys(PHENOMENA) as PhenomKey[], []);
   const driverKeys = useMemo(() => Object.keys(DRIVERS), []);
 
@@ -104,8 +105,9 @@ export const PhenomNetwork = ({
         .strength((d) => (d.kind === "driver" ? 0.18 : 0)))
       .alpha(1).alphaDecay(0.04);
 
+    simRef.current = sim;
     sim.on("tick", () => force((x) => x + 1));
-    return () => { sim.stop(); };
+    return () => { sim.stop(); simRef.current = null; };
   }, [nodes, links, width, height, phenKeys, driverKeys]);
 
   // d3-zoom: VAIN wheel + Ctrl/Meta zoomaa. Ei drag-pania, jotta klikkaus & touch
@@ -174,6 +176,54 @@ export const PhenomNetwork = ({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  // Drag-and-drop: yksittäisen solmun veto reheatää simulaation → kuminauhaefekti
+  const dragState = useRef<{ id: string; pointerId: number; moved: boolean } | null>(null);
+
+  const svgPoint = (clientX: number, clientY: number) => {
+    const g = gRef.current;
+    if (!g) return { x: 0, y: 0 };
+    const ctm = (g as SVGGraphicsElement).getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const pt = (svgRef.current as SVGSVGElement).createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  };
+
+  const onNodePointerDown = (id: string) => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    const node = nodes.find((n) => n.id === id);
+    if (!node) return;
+    try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch {}
+    dragState.current = { id, pointerId: e.pointerId, moved: false };
+    const sim = simRef.current;
+    if (sim) sim.alphaTarget(0.4).restart();
+    node.fx = node.x; node.fy = node.y;
+  };
+  const onNodePointerMove = (e: React.PointerEvent) => {
+    const ds = dragState.current;
+    if (!ds || ds.pointerId !== e.pointerId) return;
+    const node = nodes.find((n) => n.id === ds.id);
+    if (!node) return;
+    const { x, y } = svgPoint(e.clientX, e.clientY);
+    node.fx = x; node.fy = y;
+    ds.moved = true;
+  };
+  const onNodePointerUp = (id: string, kind: NodeKind) => (e: React.PointerEvent) => {
+    const ds = dragState.current;
+    if (!ds || ds.pointerId !== e.pointerId) return;
+    const node = nodes.find((n) => n.id === ds.id);
+    const sim = simRef.current;
+    if (sim) sim.alphaTarget(0);
+    if (node) { node.fx = null; node.fy = null; }
+    const moved = ds.moved;
+    dragState.current = null;
+    if (!moved) {
+      const focused = isFocus(kind, id);
+      onSelect?.(focused ? null : { kind, id });
+    }
+  };
 
   return (
     <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`}
@@ -272,8 +322,11 @@ export const PhenomNetwork = ({
           const tagX = anchor === "start" ? tx - 4 : anchor === "end" ? tx - tagW + 4 : tx - tagW / 2;
           return (
             <g key={n.id} transform={`translate(${n.x},${n.y})`} data-node="1"
-              style={{ cursor: "pointer", pointerEvents: "all", touchAction: "manipulation" }}
-              onClick={(e) => { e.stopPropagation(); onSelect?.(focus ? null : { kind: "driver", id: n.id }); }}>
+              style={{ cursor: "grab", pointerEvents: "all", touchAction: "none" }}
+              onPointerDown={onNodePointerDown(n.id)}
+              onPointerMove={onNodePointerMove}
+              onPointerUp={onNodePointerUp(n.id, "driver")}
+              onPointerCancel={onNodePointerUp(n.id, "driver")}>
               {/* Iso näkymätön hit-alue kosketukselle */}
               <circle r={18} fill="transparent" />
               <circle r={r}
@@ -333,8 +386,11 @@ export const PhenomNetwork = ({
 
           return (
             <g key={n.id} transform={`translate(${n.x},${n.y})`} data-node="1"
-              style={{ cursor: "pointer", pointerEvents: "all", touchAction: "manipulation" }}
-              onClick={(e) => { e.stopPropagation(); onSelect?.(focus ? null : { kind: "phenom", id: k }); }}>
+              style={{ cursor: "grab", pointerEvents: "all", touchAction: "none" }}
+              onPointerDown={onNodePointerDown(n.id)}
+              onPointerMove={onNodePointerMove}
+              onPointerUp={onNodePointerUp(n.id, "phenom")}
+              onPointerCancel={onNodePointerUp(n.id, "phenom")}>
               <circle r={focus ? 44 : 40} fill="url(#phenomFill)"
                 stroke={critical ? accent : "var(--ink)"}
                 strokeWidth={critical ? 2.5 : 1}
@@ -374,7 +430,7 @@ export const PhenomNetwork = ({
       {/* zoom hint */}
       <text x={12} y={height - 10} fontSize={9} className="font-mono"
         fill="var(--ink-faint)" style={{ pointerEvents: "none" }}>
-        vedä raahataksesi · ⌘/Ctrl + rulla zoomaa
+        vedä solmua siirtääksesi · verkko reagoi joustavasti · ⌘/Ctrl + rulla zoomaa
       </text>
     </svg>
   );
