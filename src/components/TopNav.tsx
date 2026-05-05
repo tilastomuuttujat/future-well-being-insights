@@ -5,6 +5,7 @@ const links = [
   { to: "/navigaattori", label: "Navigaattori" },
   { to: "/navigaattori/kartta", label: "Kartta" },
   { to: "/navigaattori/keha", label: "Kehä" },
+  { to: "/navigaattori/ilmiot", label: "Ilmiöt" },
   { to: "/navigaattori/tietokanta", label: "Tietokanta" },
   { to: "/reseptit", label: "Reseptit" },
 ];

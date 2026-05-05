@@ -9,6 +9,7 @@ import Navigaattori from "./pages/Navigaattori";
 import NavigaattoriKartta from "./pages/NavigaattoriKartta";
 import NavigaattoriKeha from "./pages/NavigaattoriKeha";
 import NavigaattoriTietokanta from "./pages/NavigaattoriTietokanta";
+import NavigaattoriIlmiot from "./pages/NavigaattoriIlmiot";
 import Reseptit from "./pages/Reseptit";
 import ReseptiDetail from "./pages/ReseptiDetail";
 import NotFound from "./pages/NotFound";
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/navigaattori/kartta" element={<NavigaattoriKartta />} />
               <Route path="/navigaattori/keha" element={<NavigaattoriKeha />} />
               <Route path="/navigaattori/tietokanta" element={<NavigaattoriTietokanta />} />
+              <Route path="/navigaattori/ilmiot" element={<NavigaattoriIlmiot />} />
               <Route path="/reseptit" element={<Reseptit />} />
               <Route path="/reseptit/:id" element={<ReseptiDetail />} />
               <Route path="*" element={<NotFound />} />
