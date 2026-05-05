@@ -42,6 +42,7 @@ export const PhenomNetwork = ({
 }: Props) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const gRef = useRef<SVGGElement | null>(null);
+  const simRef = useRef<d3.Simulation<SimNode, SimLink> | null>(null);
   const phenKeys = useMemo(() => Object.keys(PHENOMENA) as PhenomKey[], []);
   const driverKeys = useMemo(() => Object.keys(DRIVERS), []);
 
