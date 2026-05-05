@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { InfoMark } from "@/components/InfoMark";
 import { RECIPE_LIST } from "@/data/recipes";
+import { ROADMAP } from "@/features/meta/data";
+import { StatusBadge } from "@/features/meta/StatusBadge";
 
 /**
  * Lukija — narratiivinen 8-lukuinen kertomus Suomen hyvinvointijärjestelmästä.
@@ -613,6 +615,36 @@ const Lukija = () => {
           Haluatko ajaa reseptit itse omilla rajauksilla?{" "}
           <Link to="/reseptit" className="text-gold hover:underline">
             Asiantuntijatyökalu — reseptimylly →
+          </Link>
+        </p>
+      </Section>
+
+      {/* 7 Tiekartta — viittaus Tietokanta-sivuun */}
+      <Section id="tiekartta" num={7} title="Tiekartta" sub="Mihin V-Signal etenee" isNew>
+        <p>
+          Lukijaversion ja navigaattorin alla on tietokanta, joka karttuu vaiheittain.
+          Alla nykytilan tiivistelmä — täysi kuvaus tauluista, kattavuudesta ja tunnetuista
+          puutteista löytyy meta-sivulta.
+        </p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 my-6">
+          {ROADMAP.map((p) => (
+            <div key={p.phase} className="paper p-4 flex flex-col gap-2">
+              <div className="flex items-baseline justify-between">
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-mute">
+                  {p.phase}
+                </div>
+                <StatusBadge status={p.status} />
+              </div>
+              <h4 className="font-serif text-base text-ink leading-snug">{p.title}</h4>
+              <ul className="text-[12px] text-ink-soft space-y-1 list-disc list-inside marker:text-ink-faint">
+                {p.bullets.slice(0, 3).map((b) => <li key={b}>{b}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p>
+          <Link to="/navigaattori/tietokanta" className="font-mono text-[13px] text-gold hover:underline">
+            Avaa tietokannan kokonaisarvio →
           </Link>
         </p>
       </Section>
