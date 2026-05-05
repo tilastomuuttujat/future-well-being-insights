@@ -1,0 +1,289 @@
+/**
+ * build-lukija.ts — generoi staattisen HTML+JSON -version Ilmiöt-näkymästä
+ * lukijoille kansioon public/lukija/.
+ *
+ * Aja:  bun run scripts/build-lukija.ts
+ *
+ * Tuottaa:
+ *   public/lukija/data.json   — DRIVERS, PHENOMENA, LINKS, PHENOM_LINKS, SCENARIOS
+ *   public/lukija/index.html  — itsenäinen sivu (D3 CDN), ei React-riippuvuuksia
+ */
+import { writeFileSync, mkdirSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  DRIVERS,
+  PHENOMENA,
+  LINKS,
+  PHENOM_LINKS,
+  SCENARIOS,
+} from "../src/features/ilmiot/data";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = resolve(__dirname, "../public/lukija");
+mkdirSync(OUT_DIR, { recursive: true });
+
+// fmt-funktiot eivät serialisoidu — tallennetaan pelkkä unit ja decimals-hint
+const driversSerializable = Object.fromEntries(
+  Object.entries(DRIVERS).map(([k, d]) => [
+    k,
+    {
+      label: d.label,
+      unit: d.unit,
+      base: d.base,
+      min: d.min,
+      max: d.max,
+      step: d.step,
+      decimals: d.step < 0.05 ? 2 : d.step < 0.5 ? 1 : 1,
+    },
+  ])
+);
+
+const payload = {
+  generatedAt: new Date().toISOString(),
+  PHENOMENA,
+  DRIVERS: driversSerializable,
+  LINKS,
+  PHENOM_LINKS,
+  SCENARIOS,
+};
+
+writeFileSync(
+  resolve(OUT_DIR, "data.json"),
+  JSON.stringify(payload, null, 2),
+  "utf8"
+);
+
+const html = `<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hyvinvointi-ilmiöiden simulaattori — lukijaversio</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+  :root{
+    --bg:#f5f1e8; --paper:#fbf8f1; --ink:#2a2722; --muted:#6b6358;
+    --line:#d9d2c2; --accent:#a8401f; --gold:#8a6510;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.5 Georgia,"Times New Roman",serif}
+  header{padding:18px 24px;border-bottom:1px solid var(--line);background:var(--paper)}
+  h1{margin:0;font-size:20px;font-weight:600}
+  .sub{color:var(--muted);font-size:12px;margin-top:4px}
+  main{display:grid;grid-template-columns:280px 1fr 280px;gap:0;height:calc(100vh - 60px)}
+  aside{padding:14px;overflow-y:auto;background:var(--paper);border-right:1px solid var(--line)}
+  aside.right{border-right:none;border-left:1px solid var(--line)}
+  section.canvas{position:relative;background:var(--bg)}
+  svg.net{width:100%;height:100%;display:block}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+    margin:16px 0 8px;font-weight:600}
+  h2:first-child{margin-top:0}
+  .driver{margin-bottom:10px;padding:8px;border:1px solid var(--line);background:var(--paper);border-radius:2px}
+  .driver.changed{background:#fdf6e3;border-color:var(--gold)}
+  .driver label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .driver .val{font-family:"SF Mono",Menlo,monospace;color:var(--gold)}
+  .driver input[type=range]{width:100%}
+  .scen{display:block;width:100%;text-align:left;padding:8px;margin-bottom:6px;
+    background:var(--paper);border:1px solid var(--line);cursor:pointer;border-radius:2px;font:inherit}
+  .scen:hover{border-color:var(--accent)}
+  .scen.active{background:#fdf6e3;border-color:var(--gold)}
+  .scen .nm{font-weight:600;font-size:13px}
+  .scen .ds{color:var(--muted);font-size:11px;margin-top:2px}
+  .reset{margin-top:8px;padding:6px 12px;background:transparent;border:1px solid var(--line);
+    cursor:pointer;font:inherit;font-size:12px}
+  .phenom-list{margin-top:12px}
+  .pcard{padding:8px;border:1px solid var(--line);background:var(--paper);margin-bottom:6px;border-radius:2px}
+  .pcard .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .pcard .v{font-family:"SF Mono",Menlo,monospace;font-size:18px;margin-top:2px}
+  .pcard .delta{font-size:11px;margin-left:8px}
+  .delta.up{color:#a8401f} .delta.dn{color:#2f6b46}
+  .horizon{display:flex;gap:4px;margin-bottom:10px}
+  .horizon button{flex:1;padding:6px;background:var(--paper);border:1px solid var(--line);cursor:pointer;font:inherit;font-size:12px}
+  .horizon button.active{background:var(--ink);color:var(--paper)}
+  .hint{position:absolute;top:8px;left:12px;font-size:11px;color:var(--muted)}
+  @media (max-width:900px){main{grid-template-columns:1fr;height:auto}
+    section.canvas{height:60vh}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Hyvinvointi-ilmiöiden simulaattori</h1>
+  <div class="sub">Lukijaversio · driverit → ilmiöt · ΔP = Σ(w · ΔX_norm · |P_base|) · timeFactor(lag, t)</div>
+</header>
+<main>
+  <aside id="left"></aside>
+  <section class="canvas">
+    <div class="hint">vedä solmuja siirtääksesi · verkko reagoi joustavasti</div>
+    <svg class="net" id="net"></svg>
+  </section>
+  <aside class="right" id="right"></aside>
+</main>
+
+<script>
+const DAMPING=0.55, CHAIN_ITER=2;
+let DATA=null, vars={}, horizon=5, activeScen=null;
+
+function fmt(d, v){
+  if(d.unit==='%') return (v>0&&d.label.includes('BKT')?'+':'')+v.toFixed(d.decimals)+' %';
+  if(d.unit==='ind') return v.toFixed(d.decimals);
+  return v.toFixed(d.decimals);
+}
+function timeFactor(lag,t){const den=Math.max(lag,3);return Math.max(0,Math.min(1,1-Math.abs(lag-t)/den))}
+function clampP(v,k){const b=DATA.PHENOMENA[k].base;return Math.max(b*0.05,Math.min(b*3.5,v))}
+function simulate(){
+  const ph={}; for(const k in DATA.PHENOMENA) ph[k]=DATA.PHENOMENA[k].base;
+  for(const l of DATA.LINKS){
+    const d=DATA.DRIVERS[l.from]; if(!d) continue;
+    const norm=(vars[l.from]-d.base)/(d.max-d.min);
+    ph[l.to]+=norm*l.weight*Math.abs(DATA.PHENOMENA[l.to].base)*timeFactor(l.lag,horizon);
+  }
+  for(const k in ph) ph[k]=clampP(ph[k],k);
+  for(let it=0;it<CHAIN_ITER;it++){
+    const u={};
+    for(const l of DATA.PHENOM_LINKS){
+      const nd=(ph[l.from]-DATA.PHENOMENA[l.from].base)/Math.abs(DATA.PHENOMENA[l.from].base);
+      u[l.to]=(u[l.to]||0)+nd*l.weight*DAMPING*Math.abs(DATA.PHENOMENA[l.to].base);
+    }
+    for(const k in u) ph[k]=clampP(ph[k]+u[k],k);
+  }
+  return ph;
+}
+
+function renderLeft(){
+  const el=document.getElementById('left');
+  const groups={'Talous & työ':['unemp','bkt','gini','ansiotaso'],
+    'Palvelut':['pdh','perus','lsk_p','nuor','mth','exp_gdp'],
+    'Asuminen & tulot':['asumiskust','ansios','jaljella_vuokra','omistus_vuokra']};
+  let h='<h2>Driverit</h2>';
+  for(const g in groups){
+    h+='<h2 style="margin-top:14px">'+g+'</h2>';
+    for(const k of groups[g]){
+      const d=DATA.DRIVERS[k]; if(!d) continue;
+      const v=vars[k], chg=Math.abs(v-d.base)>1e-9;
+      h+='<div class="driver'+(chg?' changed':'')+'" data-k="'+k+'">'+
+        '<label><span>'+d.label+'</span><span class="val">'+fmt(d,v)+'</span></label>'+
+        '<input type="range" min="'+d.min+'" max="'+d.max+'" step="'+d.step+'" value="'+v+'" data-k="'+k+'">'+
+        '</div>';
+    }
+  }
+  h+='<button class="reset" id="reset">↺ Palauta</button>';
+  el.innerHTML=h;
+  el.querySelectorAll('input[type=range]').forEach(r=>{
+    r.oninput=e=>{vars[e.target.dataset.k]=+e.target.value; activeScen=null; refresh();};
+  });
+  document.getElementById('reset').onclick=()=>{
+    for(const k in DATA.DRIVERS) vars[k]=DATA.DRIVERS[k].base;
+    activeScen=null; refresh();
+  };
+}
+
+function renderRight(){
+  const el=document.getElementById('right');
+  const ph=simulate();
+  let h='<h2>Aikahorisontti</h2><div class="horizon">';
+  [1,3,5,10].forEach(t=>{h+='<button data-t="'+t+'"'+(t===horizon?' class="active"':'')+'>'+t+'v</button>'});
+  h+='</div>';
+  h+='<h2>Skenaariot</h2>';
+  DATA.SCENARIOS.forEach((s,i)=>{
+    h+='<button class="scen'+(activeScen===i?' active':'')+'" data-s="'+i+'">'+
+      '<div class="nm">'+s.name+'</div><div class="ds">'+s.desc+'</div></button>';
+  });
+  h+='<h2>Ilmiöt nyt</h2><div class="phenom-list">';
+  for(const k in DATA.PHENOMENA){
+    const p=DATA.PHENOMENA[k], v=ph[k], dlt=v-p.base, pct=(dlt/Math.abs(p.base))*100;
+    const dir = (dlt>0?'up':'dn'), goodbad = (Math.sign(dlt)===p.good?'dn':'up');
+    h+='<div class="pcard"><div class="lbl">'+p.label+'</div>'+
+      '<div class="v" style="color:'+p.color+'">'+v.toFixed(2)+' <span style="font-size:11px;color:#888">'+p.unit+'</span>'+
+      '<span class="delta '+goodbad+'">'+(dlt>0?'+':'')+pct.toFixed(1)+'%</span></div></div>';
+  }
+  h+='</div>';
+  el.innerHTML=h;
+  el.querySelectorAll('.horizon button').forEach(b=>b.onclick=()=>{horizon=+b.dataset.t;refresh()});
+  el.querySelectorAll('.scen').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.s; activeScen=i;
+    for(const k in DATA.DRIVERS) vars[k]=DATA.DRIVERS[k].base;
+    const sc=DATA.SCENARIOS[i];
+    for(const k in sc.changes) if(DATA.DRIVERS[k]) vars[k]=DATA.DRIVERS[k].base+sc.changes[k];
+    refresh();
+  });
+}
+
+let sim, gLink, gNode, svgSel;
+function initNetwork(){
+  const svg=document.getElementById('net');
+  const W=svg.clientWidth, H=svg.clientHeight;
+  svgSel=d3.select(svg);
+  svgSel.selectAll('*').remove();
+  const root=svgSel.append('g');
+  svgSel.call(d3.zoom().filter(e=>e.type==='wheel'&&(e.ctrlKey||e.metaKey)).on('zoom',e=>root.attr('transform',e.transform)));
+
+  const drvKeys=[...new Set(DATA.LINKS.map(l=>l.from))];
+  const phKeys=Object.keys(DATA.PHENOMENA);
+  const nodes=[
+    ...drvKeys.map(k=>({id:k,type:'d',label:DATA.DRIVERS[k]?.label||k})),
+    ...phKeys.map(k=>({id:k,type:'p',label:DATA.PHENOMENA[k].label,color:DATA.PHENOMENA[k].color})),
+  ];
+  const links=[
+    ...DATA.LINKS.map(l=>({source:l.from,target:l.to,w:l.weight,kind:'dp'})),
+    ...DATA.PHENOM_LINKS.map(l=>({source:l.from,target:l.to,w:l.weight,kind:'pp'})),
+  ];
+
+  sim=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(90).strength(0.4))
+    .force('charge',d3.forceManyBody().strength(-220))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collide',d3.forceCollide(28));
+
+  gLink=root.append('g').selectAll('line').data(links).enter().append('line')
+    .attr('stroke',d=>d.w>0?'#a8401f':'#2f6b46').attr('stroke-opacity',0.45)
+    .attr('stroke-width',d=>1+Math.abs(d.w)*4);
+
+  gNode=root.append('g').selectAll('g').data(nodes).enter().append('g')
+    .style('cursor','grab').attr('touch-action','none');
+  gNode.append('circle').attr('r',d=>d.type==='p'?18:11)
+    .attr('fill',d=>d.type==='p'?(d.color||'#444'):'#fbf8f1')
+    .attr('stroke',d=>d.type==='p'?'#fbf8f1':'#6b6358').attr('stroke-width',1.5);
+  gNode.append('text').text(d=>d.label).attr('font-size',10).attr('text-anchor','middle')
+    .attr('dy',d=>d.type==='p'?32:22).attr('fill','#2a2722').style('pointer-events','none');
+
+  // pointer drag
+  gNode.each(function(d){
+    const el=this;
+    el.addEventListener('pointerdown',ev=>{
+      ev.stopPropagation(); el.setPointerCapture(ev.pointerId);
+      sim.alphaTarget(0.4).restart();
+      el._drag=true;
+    });
+    el.addEventListener('pointermove',ev=>{
+      if(!el._drag) return;
+      const pt=svgSel.node().createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY;
+      const m=root.node().getScreenCTM().inverse(); const p=pt.matrixTransform(m);
+      d.fx=p.x; d.fy=p.y;
+    });
+    el.addEventListener('pointerup',ev=>{el._drag=false; sim.alphaTarget(0); d.fx=null; d.fy=null;});
+  });
+
+  sim.on('tick',()=>{
+    gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    gNode.attr('transform',d=>'translate('+d.x+','+d.y+')');
+  });
+}
+
+function refresh(){renderLeft(); renderRight();}
+
+fetch('./data.json').then(r=>r.json()).then(d=>{
+  DATA=d;
+  for(const k in DATA.DRIVERS) vars[k]=DATA.DRIVERS[k].base;
+  refresh(); initNetwork();
+});
+</script>
+</body>
+</html>`;
+
+writeFileSync(resolve(OUT_DIR, "index.html"), html, "utf8");
+
+console.log("✔ Generoitu:");
+console.log("  " + resolve(OUT_DIR, "data.json"));
+console.log("  " + resolve(OUT_DIR, "index.html"));
