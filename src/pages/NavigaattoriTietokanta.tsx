@@ -8,6 +8,7 @@ import {
   COVERAGE_YEARS, KNOWN_GAPS, ROADMAP,
 } from "@/features/meta/data";
 import { useTableCounts } from "@/hooks/useTableCount";
+import { ImpactMatrix } from "@/features/meta/ImpactMatrix";
 
 const NavigaattoriTietokanta = () => {
   useEffect(() => { document.title = "V-Signal · Tietokannan kokonaisarvio"; }, []);
