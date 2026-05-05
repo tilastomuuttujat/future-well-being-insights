@@ -171,8 +171,10 @@ export const PhenomNetwork = ({
 
   return (
     <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`}
-      className="w-full h-auto block select-none"
-      style={{ touchAction: "none", cursor: "grab" }}
+      preserveAspectRatio="xMidYMid meet"
+      className="block select-none"
+      width="100%" height="100%"
+      style={{ touchAction: "none", cursor: "grab", display: "block" }}
       role="img" aria-label="Ilmiöverkko">
       <defs>
         <radialGradient id="phenomFill" cx="50%" cy="50%" r="50%">
