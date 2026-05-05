@@ -332,8 +332,8 @@ export const PhenomNetwork = ({
           const tY = sparkY + sparkH - ((tr[tIdx] - min) / range) * sparkH;
 
           return (
-            <g key={n.id} transform={`translate(${n.x},${n.y})`}
-              style={{ cursor: "pointer", pointerEvents: "all" }}
+            <g key={n.id} transform={`translate(${n.x},${n.y})`} data-node="1"
+              style={{ cursor: "pointer", pointerEvents: "all", touchAction: "manipulation" }}
               onClick={(e) => { e.stopPropagation(); onSelect?.(focus ? null : { kind: "phenom", id: k }); }}>
               <circle r={focus ? 44 : 40} fill="url(#phenomFill)"
                 stroke={critical ? accent : "var(--ink)"}
