@@ -172,7 +172,7 @@ const NavigaattoriIlmiot = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -20, opacity: 0 }}
               transition={{ duration: 0.22 }}
-              className="absolute top-12 left-3 w-[260px] paper p-3 z-10 shadow-sm border border-ink/10"
+              className="absolute top-12 left-3 w-[280px] paper p-3 z-10 shadow-sm border border-ink/10"
               style={{ maxHeight: "calc(100% - 80px)", overflow: "auto", background: "rgba(250,248,243,0.96)", backdropFilter: "blur(4px)" }}>
               <div className="flex items-baseline justify-between mb-2">
                 <div className="eyebrow">Driverit</div>
