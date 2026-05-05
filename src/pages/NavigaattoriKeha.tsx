@@ -5,6 +5,7 @@ import { DecadeLens } from "@/features/keha/DecadeLens";
 import { ProfileRail } from "@/features/keha/ProfileRail";
 import { InvestmentModal } from "@/features/keha/InvestmentModal";
 import { PlacedPoint } from "@/features/keha/data";
+import { DataStatusChip } from "@/features/keha/DataStatusChip";
 import {
   AREA_TABS, ASEMA, DEFAULT_PROFILE, ELAMANVAIHE, Profile,
   findingsForProfile, highlightedClusters,
