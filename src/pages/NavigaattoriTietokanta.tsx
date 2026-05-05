@@ -8,6 +8,7 @@ import {
   COVERAGE_YEARS, KNOWN_GAPS, ROADMAP,
 } from "@/features/meta/data";
 import { useTableCounts } from "@/hooks/useTableCount";
+import { ImpactMatrix } from "@/features/meta/ImpactMatrix";
 
 const NavigaattoriTietokanta = () => {
   useEffect(() => { document.title = "V-Signal · Tietokannan kokonaisarvio"; }, []);
@@ -129,7 +130,16 @@ const NavigaattoriTietokanta = () => {
         </div>
       </MetaSection>
 
-      {/* PUUTTEET */}
+      {/* VAIKUTUSMATRIISI */}
+      <MetaSection id="matriisi" eyebrow="04 · Vaikutusmatriisi" title="Sektori × indikaattori"
+        right={<span className="font-mono text-[10px] text-ink-faint">β · 10 % panostus</span>}>
+        <ImpactMatrix />
+        <p className="text-[11px] text-ink-mute mt-3 max-w-2xl">
+          Otoskerroinmatriisi: kuinka 10 % muutos sektorin panostuksessa siirtää indikaattoria.
+          Vihreä = parantaa konvention mukaisesti, punainen = heikentää. Lähde: V-Signalin proton
+          β-arviot — vaihe 3:ssa korvataan <code className="font-mono text-[10px]">v_signal_impact_matrix</code> -näkymällä.
+        </p>
+      </MetaSection>
       <MetaSection id="puutteet" eyebrow="04 · Tunnetut puutteet" title="Datan katve">
         <ul className="paper p-5 flex flex-col gap-2">
           {KNOWN_GAPS.map((g) => (
