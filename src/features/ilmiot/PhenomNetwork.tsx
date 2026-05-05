@@ -116,9 +116,18 @@ export const PhenomNetwork = ({
     const g = d3.select(gRef.current);
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.6, 2.2])
-      .filter((event) => event.type === "wheel" && (event.ctrlKey || event.metaKey))
+      .filter((event) => {
+        // Estä zoom/pan kun käyttäjä koskee solmua (solmuilla data-node="1")
+        const target = event.target as Element | null;
+        if (target && target.closest && target.closest('[data-node="1"]')) return false;
+        // Salli: wheel (zoom), mouse left-button drag (pan), touch (pan/pinch)
+        if (event.type === "wheel") return true;
+        if (event.type === "mousedown") return event.button === 0;
+        if (event.type === "touchstart" || event.type === "pointerdown") return true;
+        return !event.ctrlKey && !event.button;
+      })
       .on("zoom", (e) => g.attr("transform", e.transform.toString()));
-    svg.call(zoom);
+    svg.call(zoom).on("dblclick.zoom", null);
     return () => { svg.on(".zoom", null); };
   }, []);
 
