@@ -108,18 +108,15 @@ export const PhenomNetwork = ({
     return () => { sim.stop(); };
   }, [nodes, links, width, height, phenKeys, driverKeys]);
 
-  // d3-zoom on the <g>
+  // d3-zoom: VAIN wheel + Ctrl/Meta zoomaa. Ei drag-pania, jotta klikkaus & touch
+  // pääsevät solmuille (drag-pan söi tap-eventit varsinkin kosketusnäytöllä).
   useEffect(() => {
     if (!svgRef.current || !gRef.current) return;
     const svg = d3.select(svgRef.current);
     const g = d3.select(gRef.current);
     const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.4, 3])
-      .filter((event) => {
-        // Ignore wheel without modifier so page can scroll, allow drag/pinch
-        if (event.type === "wheel") return event.ctrlKey || event.metaKey;
-        return !event.button;
-      })
+      .scaleExtent([0.6, 2.2])
+      .filter((event) => event.type === "wheel" && (event.ctrlKey || event.metaKey))
       .on("zoom", (e) => g.attr("transform", e.transform.toString()));
     svg.call(zoom);
     return () => { svg.on(".zoom", null); };
