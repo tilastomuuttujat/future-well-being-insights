@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { KehaCanvas } from "@/features/keha/KehaCanvas";
 import { DecadeLens } from "@/features/keha/DecadeLens";
+import { ProfileRail } from "@/features/keha/ProfileRail";
+import { InvestmentModal } from "@/features/keha/InvestmentModal";
 import { PlacedPoint } from "@/features/keha/data";
 import {
   AREA_TABS, ASEMA, DEFAULT_PROFILE, ELAMANVAIHE, Profile,
@@ -21,6 +23,7 @@ const NavigaattoriKeha = () => {
   const [sel, setSel] = useState<Sel>({ A: null, B: null });
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
   const [pts, setPts] = useState<PlacedPoint[]>([]);
+  const [investOpen, setInvestOpen] = useState(false);
 
   const highlight = useMemo(() => highlightedClusters(profile), [profile]);
   const findings = useMemo(() => findingsForProfile(pts, profile), [pts, profile]);
@@ -150,8 +153,21 @@ const NavigaattoriKeha = () => {
 
       <DecadeLens phase={profile.elamanvaihe} area={profile.area} />
 
+      <ProfileRail
+        phase={profile.elamanvaihe}
+        area={profile.area}
+        onOpenInvestment={() => setInvestOpen(true)}
+      />
+
+      <InvestmentModal
+        open={investOpen}
+        onOpenChange={setInvestOpen}
+        phase={profile.elamanvaihe}
+        area={profile.area}
+      />
+
       <p className="text-[10px] text-ink-faint font-mono mt-4">
-        Erä 3 valmis · seuraavaksi profiilirail (suojaavat & riskitekijät) ja investointimodaali.
+        Erä 4 valmis · profiilirail, investointikortti säätimineen ja arjen vaikutuslistat.
       </p>
     </div>
   );
