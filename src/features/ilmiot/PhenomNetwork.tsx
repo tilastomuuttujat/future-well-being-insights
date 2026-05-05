@@ -243,7 +243,7 @@ export const PhenomNetwork = ({
           );
         })}
 
-        {/* DRIVERS */}
+        {/* DRIVERS — minimalistinen: pieni piste, label vain hover/focus/muutettu */}
         {nodes.filter((n) => n.kind === "driver").map((n) => {
           if (n.x == null) return null;
           const d = DRIVERS[n.id];
@@ -251,35 +251,44 @@ export const PhenomNetwork = ({
           const delta = driverDelta(n.id);
           const focus = isFocus("driver", n.id);
           const changed = Math.abs(delta) > 1e-3;
-          const r = focus ? 9 : changed ? 6.5 : 4.2;
-          // label outside, away from center
+          const showLabel = focus || changed;
+          const r = focus ? 5.5 : changed ? 4 : 2.6;
           const cx = width / 2, cy = height / 2;
           const ang = Math.atan2(n.y! - cy, n.x! - cx);
-          const tx = Math.cos(ang) * 16, ty = Math.sin(ang) * 16;
-          const anchor = Math.cos(ang) > 0.3 ? "start" : Math.cos(ang) < -0.3 ? "end" : "middle";
+          const tx = Math.cos(ang) * 12, ty = Math.sin(ang) * 12;
+          const anchor = Math.cos(ang) > 0.25 ? "start" : Math.cos(ang) < -0.25 ? "end" : "middle";
+          const labelText = d.label.length > 22 ? d.label.slice(0, 20) + "…" : d.label;
+          // approx text width for tag background
+          const tagW = labelText.length * 5.2 + 10;
+          const tagX = anchor === "start" ? tx - 4 : anchor === "end" ? tx - tagW + 4 : tx - tagW / 2;
           return (
             <g key={n.id} transform={`translate(${n.x},${n.y})`}
               style={{ cursor: "pointer", pointerEvents: "all" }}
               onClick={(e) => { e.stopPropagation(); onSelect?.(focus ? null : { kind: "driver", id: n.id }); }}>
-              {changed && (
-                <circle r={r + 4} fill="none" stroke="var(--gold)"
-                  strokeWidth={0.9} strokeOpacity={0.35 + 0.25 * Math.sin(phase * Math.PI * 2)} />
-              )}
-              <circle r={r} fill={changed ? "var(--gold)" : "hsl(var(--paper))"}
-                stroke="var(--ink)" strokeWidth={focus ? 1.5 : 0.8}
-                style={{ transition: "r 200ms ease" }} />
-              <text x={tx} y={ty + 3} textAnchor={anchor as "start" | "end" | "middle"}
-                className="font-mono" fontSize={9.5}
-                fill={changed ? "var(--gold)" : "var(--ink-mute)"}
-                style={{ pointerEvents: "none" }}>
-                {d.label.length > 18 ? d.label.slice(0, 16) + "…" : d.label}
-              </text>
-              {changed && (
-                <text x={tx} y={ty + 14} textAnchor={anchor as "start" | "end" | "middle"}
-                  className="font-mono" fontSize={8.5} fill="var(--gold)"
-                  style={{ pointerEvents: "none" }}>
-                  {d.fmt(v)}
-                </text>
+              {/* Iso näkymätön hit-alue kosketukselle */}
+              <circle r={18} fill="transparent" />
+              <circle r={r}
+                fill={changed ? "var(--gold)" : "var(--ink-faint)"}
+                stroke={focus ? "var(--ink)" : "none"}
+                strokeWidth={focus ? 1.2 : 0}
+                style={{ transition: "r 200ms ease, fill 200ms ease" }} />
+              {showLabel && (
+                <g style={{ pointerEvents: "none" }}>
+                  <rect x={tagX} y={ty - 7} width={tagW} height={changed ? 22 : 13} rx={2}
+                    fill="hsl(var(--paper))" fillOpacity={0.92}
+                    stroke={changed ? "var(--gold)" : "rgba(26,29,36,0.12)"} strokeWidth={0.6} />
+                  <text x={tx} y={ty + 2} textAnchor={anchor as "start" | "end" | "middle"}
+                    className="font-mono" fontSize={9}
+                    fill={changed ? "var(--gold)" : "var(--ink-soft)"}>
+                    {labelText}
+                  </text>
+                  {changed && (
+                    <text x={tx} y={ty + 12} textAnchor={anchor as "start" | "end" | "middle"}
+                      className="font-mono" fontSize={8.5} fill="var(--gold)" fontWeight={600}>
+                      {d.fmt(v)}
+                    </text>
+                  )}
+                </g>
               )}
             </g>
           );
