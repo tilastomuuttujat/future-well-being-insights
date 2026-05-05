@@ -1,0 +1,27 @@
+/* V-Signal — paperi-designsysteemi (vanilla CSS, jaettu lukijaversion sivuille). */
+
+:root {
+  --background: #f4f1ea;
+  --paper: #faf8f3;
+  --paper-deep: #f0ece2;
+
+  --ink: #1a1d24;
+  --ink-soft: #2c3038;
+  --ink-mute: #62656d;
+  --ink-faint: #989aa2;
+
+  --gold: #8a6510;
+  --gold-soft: rgba(138, 101, 16, 0.12);
+
+  --fn-vahvistava: #2f6b46;
+  --fn-varautuminen: #2c5a8a;
+  --fn-korjaava: #a8401f;
+
+  --border: rgba(26, 29, 36, 0.10);
+
+  --serif: "Instrument Serif", Georgia, serif;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap");
