@@ -271,8 +271,8 @@ export const PhenomNetwork = ({
           const tagW = labelText.length * 5.2 + 10;
           const tagX = anchor === "start" ? tx - 4 : anchor === "end" ? tx - tagW + 4 : tx - tagW / 2;
           return (
-            <g key={n.id} transform={`translate(${n.x},${n.y})`}
-              style={{ cursor: "pointer", pointerEvents: "all" }}
+            <g key={n.id} transform={`translate(${n.x},${n.y})`} data-node="1"
+              style={{ cursor: "pointer", pointerEvents: "all", touchAction: "manipulation" }}
               onClick={(e) => { e.stopPropagation(); onSelect?.(focus ? null : { kind: "driver", id: n.id }); }}>
               {/* Iso näkymätön hit-alue kosketukselle */}
               <circle r={18} fill="transparent" />
