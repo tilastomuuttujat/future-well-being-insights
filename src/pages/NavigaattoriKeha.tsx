@@ -6,6 +6,7 @@ import { ProfileRail } from "@/features/keha/ProfileRail";
 import { InvestmentModal } from "@/features/keha/InvestmentModal";
 import { PlacedPoint } from "@/features/keha/data";
 import { DataStatusChip } from "@/features/keha/DataStatusChip";
+import { PathScore } from "@/features/keha/PathScore";
 import {
   AREA_TABS, ASEMA, DEFAULT_PROFILE, ELAMANVAIHE, Profile,
   findingsForProfile, highlightedClusters,
@@ -230,6 +231,7 @@ const SelCard = ({ label, color, point }: { label: string; color: string; point:
     <div className="text-[10px] text-ink-faint font-mono">
       {point ? `${point.d.source === "sector" ? "Sektori" : "Indikaattori"} · ${point.d.cname}` : ""}
     </div>
+    {point && <PathScore cid={point.d.cid} />}
   </div>
 );
 
