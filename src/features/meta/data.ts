@@ -203,6 +203,9 @@ export const ROADMAP: RoadmapPhase[] = [
       "Korvataan esimerkkidata Tilastokeskus/THL/Kela-syötteillä",
       "HE-päätösten täysrekisteri",
       "Alueellinen mikrodata (kunta/hyvinvointialue)",
+      "fact_phenomenon_links: Ilmiöt-sivun driver→ilmiö -linkit kantaan",
+      "v_signal_impact_matrix: sektori × indikaattori β-näkymä",
+      "v_signal_path_scores: A/T/E/U-polut klustereittain",
     ],
   },
   {
