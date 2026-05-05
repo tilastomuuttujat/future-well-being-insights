@@ -430,7 +430,7 @@ export const PhenomNetwork = ({
       {/* zoom hint */}
       <text x={12} y={height - 10} fontSize={9} className="font-mono"
         fill="var(--ink-faint)" style={{ pointerEvents: "none" }}>
-        vedä raahataksesi · ⌘/Ctrl + rulla zoomaa
+        vedä solmua siirtääksesi · verkko reagoi joustavasti · ⌘/Ctrl + rulla zoomaa
       </text>
     </svg>
   );
