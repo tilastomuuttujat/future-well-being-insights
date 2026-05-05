@@ -322,8 +322,11 @@ export const PhenomNetwork = ({
           const tagX = anchor === "start" ? tx - 4 : anchor === "end" ? tx - tagW + 4 : tx - tagW / 2;
           return (
             <g key={n.id} transform={`translate(${n.x},${n.y})`} data-node="1"
-              style={{ cursor: "pointer", pointerEvents: "all", touchAction: "manipulation" }}
-              onClick={(e) => { e.stopPropagation(); onSelect?.(focus ? null : { kind: "driver", id: n.id }); }}>
+              style={{ cursor: "grab", pointerEvents: "all", touchAction: "none" }}
+              onPointerDown={onNodePointerDown(n.id)}
+              onPointerMove={onNodePointerMove}
+              onPointerUp={onNodePointerUp(n.id, "driver")}
+              onPointerCancel={onNodePointerUp(n.id, "driver")}>
               {/* Iso näkymätön hit-alue kosketukselle */}
               <circle r={18} fill="transparent" />
               <circle r={r}
