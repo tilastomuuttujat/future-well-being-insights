@@ -5,6 +5,7 @@ import { DecadeLens } from "@/features/keha/DecadeLens";
 import { ProfileRail } from "@/features/keha/ProfileRail";
 import { InvestmentModal } from "@/features/keha/InvestmentModal";
 import { PlacedPoint } from "@/features/keha/data";
+import { DataStatusChip } from "@/features/keha/DataStatusChip";
 import {
   AREA_TABS, ASEMA, DEFAULT_PROFILE, ELAMANVAIHE, Profile,
   findingsForProfile, highlightedClusters,
@@ -123,7 +124,10 @@ const NavigaattoriKeha = () => {
           <div className="border-t border-ink/10 pt-3">
             <div className="flex items-baseline justify-between mb-2">
               <p className="eyebrow">Löydökset</p>
-              <span className="font-mono text-[10px] text-ink-faint">{findings.length}</span>
+              <span className="flex items-center gap-2">
+                {findings[0] && <DataStatusChip cid={findings[0].cid} />}
+                <span className="font-mono text-[10px] text-ink-faint">{findings.length}</span>
+              </span>
             </div>
             {findings.length === 0 ? (
               <p className="text-[11px] text-ink-faint font-mono">
@@ -213,7 +217,10 @@ const RadioRow = ({
 
 const SelCard = ({ label, color, point }: { label: string; color: string; point: PlacedPoint | null }) => (
   <div className="border border-ink/10 rounded p-2 min-h-[88px]">
-    <div className="font-mono text-[10px]" style={{ color }}>{label}</div>
+    <div className="flex items-baseline justify-between gap-2">
+      <div className="font-mono text-[10px]" style={{ color }}>{label}</div>
+      {point && <DataStatusChip cid={point.d.cid} />}
+    </div>
     <div className="font-serif text-sm text-ink leading-tight mt-0.5">
       {point?.d.name ?? "—"}
     </div>
