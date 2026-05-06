@@ -5,9 +5,14 @@
 // Toimii sekä Lovable-previewissa (/standalone/) että GitHub Pagesissa
 // (esim. /<repo>/standalone/) — käyttää suhteellisia polkuja juureen nähden.
 
-const ROOT = new URL("../", location.href).href; // = sivuston juuri
-const PLUGINS_BASE = ROOT + "plugins/";
-const DATA_BASE_DEFAULT = ROOT + "data/views/";
+// Polut lasketaan suhteessa TÄHÄN tiedostoon (host.js), ei sivun URLiin.
+// Tämä mahdollistaa toimimisen sekä /standalone/, /public/standalone/ että
+// muiden alipolkujen (esim. /<repo>/standalone/) alta — Working Copy, Lovable
+// preview ja GitHub Pages käyttäytyvät samalla tavalla.
+const HOST_DIR = new URL("./", import.meta.url).href;        // .../standalone/
+const SITE_BASE = new URL("../", import.meta.url).href;       // .../  (standalonen yläkansio)
+const PLUGINS_BASE = new URL("plugins/", SITE_BASE).href;     // .../plugins/
+const DATA_BASE_DEFAULT = new URL("data/views/", SITE_BASE).href; // .../data/views/
 
 // --- Data loader -------------------------------------------------------------
 function createDataLoader(baseUrl) {
