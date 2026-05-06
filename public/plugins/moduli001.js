@@ -189,6 +189,11 @@ function drawRatio(container, series) {
 
 let _cleanups = [];
 
+function errorText(err) {
+  if (!err) return "Tuntematon virhe";
+  return err.stack || err.message || String(err);
+}
+
 async function mount(host, core) {
   console.log("[moduli001] mount kutsuttu, host=", host, "core=", core);
   ensureStyles();
@@ -246,8 +251,12 @@ async function mount(host, core) {
     tbody.innerHTML = dr.map(r => `<tr><td>${r.year}</td><td>${r.child}</td><td>${r.elderly}</td></tr>`).join("");
     requestAnimationFrame(() => root.classList.add("is-mounted"));
   } catch (err) {
-    console.error("[moduli001] virhe mountissa:", err);
-    root.innerHTML = `<div style="padding:16px;color:#a8401f">Datan lataus epäonnistui: ${err.message}</div>`;
+    console.error("[moduli001] virhe mountissa:", {
+      name: err?.name,
+      message: err?.message,
+      stack: err?.stack,
+    }, err);
+    root.innerHTML = `<div style="padding:16px;color:#a8401f;white-space:pre-wrap">Datan lataus epäonnistui: ${errorText(err)}</div>`;
   }
 }
 
