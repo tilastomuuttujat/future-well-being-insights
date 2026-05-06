@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>V-Signal · Plugin-käynnistin</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>V-Signal · Plugin-käynnistin</h1>
+      <span id="status" class="status">Ladataan…</span>
+    </header>
+
+    <div class="layout">
+      <nav id="menu" class="menu" aria-label="Lisäosat">
+        <div class="menu-title">Lisäosat</div>
+        <ul id="menu-list"></ul>
+      </nav>
+
+      <main id="stage" class="stage">
+        <div class="empty">Valitse lisäosa vasemmalta.</div>
+      </main>
+    </div>
+
+    <footer class="foot">
+      Rekisteri: <code>/plugins/index.json</code> · Data: <code>/data/views/</code>
+    </footer>
+
+    <script type="module" src="./host.js"></script>
+  </body>
+</html>
