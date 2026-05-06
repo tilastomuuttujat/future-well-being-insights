@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dataDir": "/data/views/",
+  "dataDir": "data/views/",
   "plugins": [
     {
       "id": "moduli001",
