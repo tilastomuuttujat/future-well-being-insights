@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "Tilastokeskus + Valtiokonttori (placeholder-otos)",
+    "updated": "2024-09",
+    "deflator": "BKT 2024",
+    "note": "Demosisältö moduulien kehittämistä varten."
+  },
+  "series": [
+    {"year": 1990, "total": 7200},
+    {"year": 1995, "total": 7900},
+    {"year": 2000, "total": 8400},
+    {"year": 2005, "total": 9100},
+    {"year": 2010, "total": 10200},
+    {"year": 2015, "total": 11050},
+    {"year": 2020, "total": 12300},
+    {"year": 2024, "total": 12950}
+  ]
+}

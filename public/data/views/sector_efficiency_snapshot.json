@@ -1,0 +1,16 @@
+{
+  "_meta": {
+    "source": "V-Signal kooste (placeholder)",
+    "updated": "2024-09"
+  },
+  "sectors": [
+    {"sector":"Mielenterveys","epsilon":1.42,"r2":0.78,"n":24,"ci":[1.18,1.66]},
+    {"sector":"Opiskeluterveys","epsilon":1.38,"r2":0.71,"n":24,"ci":[1.10,1.66]},
+    {"sector":"Lastensuojelu","epsilon":0.62,"r2":0.45,"n":24,"ci":[0.40,0.84]},
+    {"sector":"Kotihoito","epsilon":0.95,"r2":0.66,"n":24,"ci":[0.78,1.12]},
+    {"sector":"Vanhuspalvelut","epsilon":0.18,"r2":0.32,"n":24,"ci":[0.05,0.31]},
+    {"sector":"Perusterveydenhuolto","epsilon":0.42,"r2":0.51,"n":24,"ci":[0.28,0.56]},
+    {"sector":"Erikoissairaanhoito","epsilon":0.78,"r2":0.69,"n":24,"ci":[0.60,0.96]},
+    {"sector":"Päivähoito","epsilon":1.05,"r2":0.74,"n":24,"ci":[0.88,1.22]}
+  ]
+}
