@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "dataDir": "/data/views/",
+  "plugins": [
+    {
+      "id": "moduli001",
+      "file": "moduli001.js",
+      "title": "Väestörakenne ja huoltosuhde 1985–2045",
+      "purpose": "Demografinen perusrakenne: pyramidi + huoltosuhde, joka kytkee hoivan, eläkkeet ja työvoiman.",
+      "slot": "dashboard.widgets",
+      "views": ["v_crisis_summary.json", "per_capita_trend.json"],
+      "tags": ["demografia", "tilannekuva"]
+    },
+    {
+      "id": "moduli002",
+      "file": "moduli002.js",
+      "title": "Sektorimenot per asukas — minne raha menee?",
+      "purpose": "Small-multiples + summa-stack: 5 sektorin €/asukas-kehitys 1990–2024.",
+      "slot": "dashboard.widgets",
+      "views": ["sector_spending_per_capita.json", "sector_efficiency_snapshot.json"],
+      "tags": ["talous", "tilannekuva"]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "source": "Tilastokeskus väestöennuste 2024 (placeholder-otos)",
+    "updated": "2024-09",
+    "note": "Tämä on demosisältö moduulien kehittämistä varten. Korvaa todellisilla v-näkymillä."
+  },
+  "pyramid": [
+    {"year": 1985, "ageBands": [
+      {"age":"0-14","m":487000,"f":466000},
+      {"age":"15-64","m":1620000,"f":1610000},
+      {"age":"65+","m":260000,"f":390000}
+    ]},
+    {"year": 2000, "ageBands": [
+      {"age":"0-14","m":485000,"f":463000},
+      {"age":"15-64","m":1720000,"f":1700000},
+      {"age":"65+","m":310000,"f":460000}
+    ]},
+    {"year": 2024, "ageBands": [
+      {"age":"0-14","m":420000,"f":400000},
+      {"age":"15-64","m":1700000,"f":1680000},
+      {"age":"65+","m":580000,"f":730000}
+    ]},
+    {"year": 2045, "ageBands": [
+      {"age":"0-14","m":360000,"f":345000},
+      {"age":"15-64","m":1500000,"f":1490000},
+      {"age":"65+","m":760000,"f":910000}
+    ]}
+  ],
+  "dependencyRatio": [
+    {"year":1985,"child":29.5,"elderly":20.1},
+    {"year":1990,"child":30.2,"elderly":20.8},
+    {"year":1995,"child":29.0,"elderly":21.6},
+    {"year":2000,"child":27.6,"elderly":22.4},
+    {"year":2005,"child":26.2,"elderly":23.7},
+    {"year":2010,"child":25.4,"elderly":25.6},
+    {"year":2015,"child":25.7,"elderly":30.2},
+    {"year":2020,"child":25.4,"elderly":35.1},
+    {"year":2024,"child":24.2,"elderly":38.6},
+    {"year":2030,"child":23.5,"elderly":43.0},
+    {"year":2040,"child":23.0,"elderly":50.4},
+    {"year":2045,"child":23.4,"elderly":55.8}
+  ]
+}
