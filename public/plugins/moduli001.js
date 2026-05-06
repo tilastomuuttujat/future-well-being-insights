@@ -3,7 +3,9 @@
 // Sopimus: ESM, default export { id, mount, unmount }.
 // Lukee dataa AINOASTAAN core.data.load("<tiedosto>") -kautta (/data/views/).
 
+console.log("[moduli001] tiedosto evaluoitu, ladataan d3…");
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+console.log("[moduli001] d3 ladattu:", typeof d3, d3?.version);
 
 const ID = "moduli001";
 
@@ -188,6 +190,7 @@ function drawRatio(container, series) {
 let _cleanups = [];
 
 async function mount(host, core) {
+  console.log("[moduli001] mount kutsuttu, host=", host, "core=", core);
   ensureStyles();
   host.innerHTML = `
     <section class="plugin-${ID}" aria-label="Väestörakenne ja huoltosuhde 1985–2045">
@@ -212,10 +215,12 @@ async function mount(host, core) {
 
   const root = host.querySelector(`.plugin-${ID}`);
   try {
+    console.log("[moduli001] aloitetaan datan lataus…");
     const [summary, perCap] = await Promise.all([
-      core.data.load("v_crisis_summary.json"),
-      core.data.load("per_capita_trend.json"),
+      core.data.load("v_crisis_summary.json").then(d => { console.log("[moduli001] v_crisis_summary OK", d); return d; }),
+      core.data.load("per_capita_trend.json").then(d => { console.log("[moduli001] per_capita_trend OK", d); return d; }),
     ]);
+    console.log("[moduli001] data ladattu:", { summary: !!summary, perCap: !!perCap });
 
     _cleanups.push(drawPyramid(root.querySelector(".pyramid"), summary.pyramid));
     _cleanups.push(drawRatio(root.querySelector(".ratio"), summary.dependencyRatio));
@@ -241,6 +246,7 @@ async function mount(host, core) {
     tbody.innerHTML = dr.map(r => `<tr><td>${r.year}</td><td>${r.child}</td><td>${r.elderly}</td></tr>`).join("");
     requestAnimationFrame(() => root.classList.add("is-mounted"));
   } catch (err) {
+    console.error("[moduli001] virhe mountissa:", err);
     root.innerHTML = `<div style="padding:16px;color:#a8401f">Datan lataus epäonnistui: ${err.message}</div>`;
   }
 }
