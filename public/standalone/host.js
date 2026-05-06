@@ -14,19 +14,50 @@ const SITE_BASE = new URL("../", import.meta.url).href;       // .../  (standalo
 const PLUGINS_BASE = new URL("plugins/", SITE_BASE).href;     // .../plugins/
 const DATA_BASE_DEFAULT = new URL("data/views/", SITE_BASE).href; // .../data/views/
 
+function uniqueUrls(urls) {
+  return [...new Set(urls.filter(Boolean))];
+}
+
+function errorText(err) {
+  if (!err) return "Tuntematon virhe";
+  return err.stack || err.message || String(err);
+}
+
+function jsonError(err) {
+  return {
+    name: err?.name,
+    message: err?.message,
+    stack: err?.stack,
+  };
+}
+
 // --- Data loader -------------------------------------------------------------
-function createDataLoader(baseUrl) {
+function createDataLoader(baseUrl, extraBaseUrls = []) {
   const cache = new Map();
+  const baseUrls = uniqueUrls([baseUrl, ...extraBaseUrls]).map((url) =>
+    url.endsWith("/") ? url : `${url}/`,
+  );
   return {
     async load(filename) {
-      const url = baseUrl + filename;
-      if (cache.has(url)) return cache.get(url);
-      const p = fetch(url, { cache: "no-cache" }).then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
-        const ct = r.headers.get("content-type") || "";
-        return ct.includes("json") ? r.json() : r.text();
-      });
-      cache.set(url, p);
+      const cacheKey = `${baseUrls.join("|")}::${filename}`;
+      if (cache.has(cacheKey)) return cache.get(cacheKey);
+      const p = (async () => {
+        const errors = [];
+        for (const base of baseUrls) {
+          const url = new URL(filename, base).href;
+          try {
+            console.log(`[data] haetaan ${url}`);
+            const r = await fetch(url, { cache: "no-cache" });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const ct = r.headers.get("content-type") || "";
+            return ct.includes("json") || filename.endsWith(".json") ? r.json() : r.text();
+          } catch (err) {
+            errors.push(`${url} → ${err?.message || err}`);
+          }
+        }
+        throw new Error(`Datan lataus epäonnistui (${filename}): ${errors.join(" | ")}`);
+      })();
+      cache.set(cacheKey, p);
       return p;
     },
   };
@@ -37,14 +68,23 @@ async function loadRegistry() {
   const r = await fetch(PLUGINS_BASE + "index.json", { cache: "no-cache" });
   if (!r.ok) throw new Error("plugins/index.json puuttuu");
   const reg = await r.json();
-  // Normalisoi dataDir: jos absoluuttinen polku alkaa "/", käsittele se sivun
-  // juuresta; muuten suhteessa standalonen yläkansioon (SITE_BASE).
+  const locationRoot = new URL("/", location.href).href;
   const dataDir = reg.dataDir
     ? (reg.dataDir.startsWith("/")
-        ? new URL(reg.dataDir.replace(/^\//, ""), new URL("/", location.href)).href
+        ? new URL(reg.dataDir.replace(/^\//, ""), locationRoot).href
         : new URL(reg.dataDir, SITE_BASE).href)
     : DATA_BASE_DEFAULT;
-  return { ...reg, dataDir };
+  const fallbackDataDirs = uniqueUrls([
+    DATA_BASE_DEFAULT,
+    new URL("data/views/", SITE_BASE).href,
+    new URL("public/data/views/", SITE_BASE).href,
+    new URL("data/views/", locationRoot).href,
+    new URL("public/data/views/", locationRoot).href,
+    new URL("../data/views/", HOST_DIR).href,
+    new URL("../public/data/views/", HOST_DIR).href,
+  ]).filter((url) => url !== dataDir);
+  console.log("[host] registry", { pluginsBase: PLUGINS_BASE, dataDir, fallbackDataDirs });
+  return { ...reg, dataDir, fallbackDataDirs };
 }
 
 // --- Module loader -----------------------------------------------------------
@@ -58,10 +98,10 @@ function loadModule(manifest) {
 }
 
 // --- Core api ----------------------------------------------------------------
-function buildCore(pluginId, dataDir) {
+function buildCore(pluginId, dataDir, fallbackDataDirs = []) {
   return {
     pluginId,
-    data: createDataLoader(dataDir),
+    data: createDataLoader(dataDir, fallbackDataDirs),
     log: (level, msg, ...rest) =>
       console[level === "error" ? "error" : level === "warn" ? "warn" : "log"](
         `[${pluginId}]`, msg, ...rest,
@@ -120,8 +160,8 @@ async function mountPlugin(id) {
     console.log("[host] ladataan moduuli", m.id, "→", PLUGINS_BASE + m.file);
     const mod = await loadModule(m);
     console.log("[host] moduuli ladattu", m.id, mod);
-    const core = buildCore(m.id, registry.dataDir);
-    console.log("[host] kutsutaan mount", m.id, "dataDir=", registry.dataDir);
+    const core = buildCore(m.id, registry.dataDir, registry.fallbackDataDirs);
+    console.log("[host] kutsutaan mount", m.id, "dataDir=", registry.dataDir, "fallbacks=", registry.fallbackDataDirs);
     // Tukee sekä v2-sopimusta mount(host, core) että objekti-argumenttia.
     const pluginObj = mod.default ?? mod;
     const result = pluginObj.mount.length >= 2
@@ -135,8 +175,8 @@ async function mountPlugin(id) {
       } catch (e) { console.error(e); }
     };
   } catch (err) {
-    console.error(err);
-    stage.innerHTML = `<div class="error">Lisäosa "${escapeHtml(id)}" epäonnistui: ${escapeHtml(String(err?.message || err))}</div>`;
+    console.error("[host] mount epäonnistui", jsonError(err), err);
+    stage.innerHTML = `<div class="error">Lisäosa "${escapeHtml(id)}" epäonnistui: ${escapeHtml(errorText(err))}</div>`;
   }
 }
 
@@ -148,8 +188,8 @@ async function mountPlugin(id) {
     renderMenu();
     if (registry.plugins[0]) mountPlugin(registry.plugins[0].id);
   } catch (err) {
-    console.error(err);
-    statusEl.textContent = `Virhe: ${err.message}`;
+    console.error("[host] käynnistys epäonnistui", jsonError(err), err);
+    statusEl.textContent = `Virhe: ${errorText(err)}`;
     statusEl.style.color = "var(--danger)";
   }
 })();
