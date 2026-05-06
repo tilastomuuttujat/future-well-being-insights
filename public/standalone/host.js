@@ -14,19 +14,39 @@ const SITE_BASE = new URL("../", import.meta.url).href;       // .../  (standalo
 const PLUGINS_BASE = new URL("plugins/", SITE_BASE).href;     // .../plugins/
 const DATA_BASE_DEFAULT = new URL("data/views/", SITE_BASE).href; // .../data/views/
 
+function uniqueUrls(urls) {
+  return [...new Set(urls.filter(Boolean))];
+}
+
+function errorText(err) {
+  if (!err) return "Tuntematon virhe";
+  return err.stack || err.message || String(err);
+}
+
+function jsonError(err) {
+  return {
+    name: err?.name,
+    message: err?.message,
+    stack: err?.stack,
+  };
+}
+
 // --- Data loader -------------------------------------------------------------
-function createDataLoader(baseUrl) {
+function createDataLoader(baseUrl, extraBaseUrls = []) {
   const cache = new Map();
+  const baseUrls = uniqueUrls([baseUrl, ...extraBaseUrls]).map((url) =>
+    url.endsWith("/") ? url : `${url}/`,
+  );
   return {
     async load(filename) {
-      const url = baseUrl + filename;
-      if (cache.has(url)) return cache.get(url);
+      const cacheKey = `${baseUrls.join("|")}::${filename}`;
+      if (cache.has(cacheKey)) return cache.get(cacheKey);
       const p = fetch(url, { cache: "no-cache" }).then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
         const ct = r.headers.get("content-type") || "";
-        return ct.includes("json") ? r.json() : r.text();
+        return ct.includes("json") || filename.endsWith(".json") ? r.json() : r.text();
       });
-      cache.set(url, p);
+      cache.set(cacheKey, p);
       return p;
     },
   };
