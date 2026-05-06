@@ -117,8 +117,11 @@ async function mountPlugin(id) {
   stage.appendChild(container);
 
   try {
+    console.log("[host] ladataan moduuli", m.id, "→", PLUGINS_BASE + m.file);
     const mod = await loadModule(m);
+    console.log("[host] moduuli ladattu", m.id, mod);
     const core = buildCore(m.id, registry.dataDir);
+    console.log("[host] kutsutaan mount", m.id, "dataDir=", registry.dataDir);
     // Tukee sekä v2-sopimusta mount(host, core) että objekti-argumenttia.
     const pluginObj = mod.default ?? mod;
     const result = pluginObj.mount.length >= 2
