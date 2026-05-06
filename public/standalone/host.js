@@ -41,11 +41,22 @@ function createDataLoader(baseUrl, extraBaseUrls = []) {
     async load(filename) {
       const cacheKey = `${baseUrls.join("|")}::${filename}`;
       if (cache.has(cacheKey)) return cache.get(cacheKey);
-      const p = fetch(url, { cache: "no-cache" }).then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
-        const ct = r.headers.get("content-type") || "";
-        return ct.includes("json") || filename.endsWith(".json") ? r.json() : r.text();
-      });
+      const p = (async () => {
+        const errors = [];
+        for (const base of baseUrls) {
+          const url = new URL(filename, base).href;
+          try {
+            console.log(`[data] haetaan ${url}`);
+            const r = await fetch(url, { cache: "no-cache" });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const ct = r.headers.get("content-type") || "";
+            return ct.includes("json") || filename.endsWith(".json") ? r.json() : r.text();
+          } catch (err) {
+            errors.push(`${url} → ${err?.message || err}`);
+          }
+        }
+        throw new Error(`Datan lataus epäonnistui (${filename}): ${errors.join(" | ")}`);
+      })();
       cache.set(cacheKey, p);
       return p;
     },
