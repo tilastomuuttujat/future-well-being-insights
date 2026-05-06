@@ -37,9 +37,12 @@ async function loadRegistry() {
   const r = await fetch(PLUGINS_BASE + "index.json", { cache: "no-cache" });
   if (!r.ok) throw new Error("plugins/index.json puuttuu");
   const reg = await r.json();
-  // Normalisoi dataDir absoluuttiseksi
+  // Normalisoi dataDir: jos absoluuttinen polku alkaa "/", käsittele se sivun
+  // juuresta; muuten suhteessa standalonen yläkansioon (SITE_BASE).
   const dataDir = reg.dataDir
-    ? new URL(reg.dataDir.replace(/^\//, ""), ROOT).href
+    ? (reg.dataDir.startsWith("/")
+        ? new URL(reg.dataDir.replace(/^\//, ""), new URL("/", location.href)).href
+        : new URL(reg.dataDir, SITE_BASE).href)
     : DATA_BASE_DEFAULT;
   return { ...reg, dataDir };
 }
