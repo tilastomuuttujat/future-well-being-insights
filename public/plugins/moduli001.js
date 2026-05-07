@@ -175,27 +175,42 @@ function drawRatio(container, series, core) {
       .on("end", () => path.attr("stroke-dasharray", p.dash || null));
   });
 
-  // Hover-katseviiva
+  // Hover-katseviiva — emit highlight + selection.year on click
   const t = tip(container);
   const focus = svg.append("line").attr("y1",M.t).attr("y2",H-M.b)
     .attr("stroke","#1a1a1a").attr("stroke-opacity",0).attr("stroke-width",1);
+  function setFocusYear(yr) {
+    const d = series.reduce((a,b)=>Math.abs(b.year-yr)<Math.abs(a.year-yr)?b:a);
+    focus.attr("x1",x(d.year)).attr("x2",x(d.year)).attr("stroke-opacity",0.6);
+    return d;
+  }
   svg.append("rect").attr("x",M.l).attr("y",M.t).attr("width",W-M.l-M.r).attr("height",H-M.b-M.t)
     .attr("fill","transparent")
     .on("mousemove", function(ev){
       const [mx] = d3.pointer(ev,this);
       const yr = Math.round(x.invert(mx + M.l));
-      const d = series.reduce((a,b)=>Math.abs(b.year-yr)<Math.abs(a.year-yr)?b:a);
-      focus.attr("x1",x(d.year)).attr("x2",x(d.year)).attr("stroke-opacity",0.4);
+      const d = setFocusYear(yr);
+      core?.bus?.emit("highlight.year", d.year);
       t.show(`<b>${d.year}</b><br>Lapset ${d.child}%<br>Eläke ${d.elderly}%<br>Yht. ${(d.child+d.elderly).toFixed(1)}%`, ev);
     })
-    .on("mouseleave", () => { focus.attr("stroke-opacity",0); t.hide(); });
+    .on("click", function(ev){
+      const [mx] = d3.pointer(ev,this);
+      const yr = Math.round(x.invert(mx + M.l));
+      core?.bus?.emit("selection.year", yr);
+    })
+    .on("mouseleave", () => { focus.attr("stroke-opacity",0); t.hide(); core?.bus?.emit("highlight.year", null); });
+
+  const offSel = core?.bus?.on("selection.year", (yr, meta) => {
+    if (meta?.source === core.pluginId || yr == null) return;
+    setFocusYear(yr);
+  });
 
   wrap.append("div").attr("class","legend").html(
     `<span><i style="background:#3a5f8a"></i>Lapset/työikä</span>
      <span><i style="background:#a8401f"></i>Eläke/työikä</span>
      <span><i style="background:#1a1a1a"></i>Yhteensä</span>`
   );
-  return () => t.destroy();
+  return () => { offSel?.(); t.destroy(); };
 }
 
 let _cleanups = [];
