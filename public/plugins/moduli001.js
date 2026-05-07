@@ -253,8 +253,8 @@ async function mount(host, core) {
     ]);
     console.log("[moduli001] data ladattu:", { summary: !!summary, perCap: !!perCap });
 
-    _cleanups.push(drawPyramid(root.querySelector(".pyramid"), summary.pyramid));
-    _cleanups.push(drawRatio(root.querySelector(".ratio"), summary.dependencyRatio));
+    _cleanups.push(drawPyramid(root.querySelector(".pyramid"), summary.pyramid, core));
+    _cleanups.push(drawRatio(root.querySelector(".ratio"), summary.dependencyRatio, core));
 
     // Insight-bulletit lasketaan datasta.
     const dr = summary.dependencyRatio;
