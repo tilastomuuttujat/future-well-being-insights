@@ -125,7 +125,7 @@ function drawStack(container, series, core) {
   return () => { offY?.(); offHY?.(); offS?.(); offSelS?.(); t.destroy(); };
 }
 
-function drawSmalls(container, series) {
+function drawSmalls(container, series, core) {
   const wrap = d3.select(container);
   wrap.selectAll("*").remove();
   const cleanups = [];
