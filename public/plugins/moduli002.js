@@ -52,7 +52,7 @@ function tip(root) {
   };
 }
 
-function drawStack(container, series) {
+function drawStack(container, series, core) {
   const wrap = d3.select(container);
   wrap.selectAll("*").remove();
   wrap.append("div").style("font","600 11px/1 ui-sans-serif,system-ui")
@@ -78,15 +78,38 @@ function drawStack(container, series) {
   const area = d3.area().x(d => x(d.data.year)).y0(d => y(d[0])).y1(d => y(d[1]));
 
   const t = tip();
-  svg.append("g").selectAll("path").data(stack).join("path")
+  const paths = svg.append("g").selectAll("path").data(stack).join("path")
     .attr("d", area).attr("fill", d => colors[d.key]).attr("opacity", 0.85)
+    .style("cursor","pointer")
     .on("mousemove", (ev, d) => {
       const [mx] = d3.pointer(ev, svg.node());
       const yr = Math.round(x.invert(mx));
       const row = data.find(r => r.year === yr) || data[data.length-1];
+      core?.bus?.emit("highlight.sector", d.key);
       t.show(`<b>${d.key}</b> · ${row.year}<br>${row[d.key].toLocaleString("fi-FI")} €/asukas`, ev);
     })
-    .on("mouseleave", t.hide);
+    .on("mouseleave", () => { t.hide(); core?.bus?.emit("highlight.sector", null); })
+    .on("click", (ev, d) => core?.bus?.emit("selection.sector", d.key));
+
+  // vuosivalinnan korostus pystyviivana
+  const yearLine = svg.append("line").attr("y1",M.t).attr("y2",H-M.b)
+    .attr("stroke","#1a1a1a").attr("stroke-width",1.2).attr("stroke-opacity",0);
+  function setYear(yr) {
+    if (yr == null) { yearLine.attr("stroke-opacity",0); return; }
+    yearLine.attr("x1",x(yr)).attr("x2",x(yr)).attr("stroke-opacity",0.7);
+  }
+  const offY = core?.bus?.on("selection.year", (yr) => setYear(yr));
+  const offHY = core?.bus?.on("highlight.year", (yr) => setYear(yr));
+
+  // sektorin korostus
+  function setSectorHL(sector) {
+    paths.attr("opacity", (d) => sector == null ? 0.85 : (d.key === sector ? 0.95 : 0.25));
+  }
+  const offS = core?.bus?.on("highlight.sector", (s, meta) => {
+    if (meta?.source === core.pluginId) return;
+    setSectorHL(s);
+  });
+  const offSelS = core?.bus?.on("selection.sector", (s) => setSectorHL(s));
 
   svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-M.b})`)
     .call(d3.axisBottom(x).tickFormat(d3.format("d")));
@@ -94,9 +117,12 @@ function drawStack(container, series) {
     .call(d3.axisLeft(y).ticks(5).tickFormat(d => (d/1000).toFixed(0)+"k"));
 
   wrap.append("div").attr("class","legend").html(
-    keys.map(k => `<span><i style="background:${colors[k]}"></i>${k}</span>`).join("")
+    keys.map(k => `<span data-sector="${k}" style="cursor:pointer"><i style="background:${colors[k]}"></i>${k}</span>`).join("")
   );
-  return () => t.destroy();
+  wrap.selectAll(".legend span").on("click", function(){
+    core?.bus?.emit("selection.sector", this.dataset.sector);
+  });
+  return () => { offY?.(); offHY?.(); offS?.(); offSelS?.(); t.destroy(); };
 }
 
 function drawSmalls(container, series) {
