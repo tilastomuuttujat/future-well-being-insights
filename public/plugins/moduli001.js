@@ -65,7 +65,7 @@ function tip(root) {
   };
 }
 
-function drawPyramid(container, snapshots) {
+function drawPyramid(container, snapshots, core) {
   // Slider valitsee vuoden, pyramid piirretään uudelleen.
   const years = snapshots.map(s => s.year);
   const wrap = d3.select(container);
