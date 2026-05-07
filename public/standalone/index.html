@@ -3,28 +3,41 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>V-Signal · Plugin-käynnistin</title>
+    <title>V-Signal · Työpöytä</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <h1>V-Signal · Plugin-käynnistin</h1>
-      <span id="status" class="status">Ladataan…</span>
+      <h1>V-Signal · Työpöytä</h1>
+      <div class="layout-switch" role="toolbar" aria-label="Asettelu">
+        <button data-layout="1" title="1 lohko">▭</button>
+        <button data-layout="2" title="2 saraketta">▥</button>
+        <button data-layout="2x2" title="2 × 2">▦</button>
+        <button data-layout="3" title="3 saraketta">▥▥▥</button>
+        <button data-layout="4" title="4 saraketta">▦▦</button>
+      </div>
+      <div class="topbar-right">
+        <button id="reset-btn" class="ghost" title="Tyhjennä työpöytä">Tyhjennä</button>
+        <span id="status" class="status">Ladataan…</span>
+      </div>
     </header>
 
     <div class="layout">
-      <nav id="menu" class="menu" aria-label="Lisäosat">
-        <div class="menu-title">Lisäosat</div>
-        <ul id="menu-list"></ul>
-      </nav>
+      <aside id="library" class="library" aria-label="Moduulikirjasto">
+        <div class="library-title">Moduulit</div>
+        <div class="library-hint">Raahaa lohkoon →</div>
+        <ul id="library-list"></ul>
+        <div class="library-title" style="margin-top:14px">Jaettu tila</div>
+        <div id="bus-state" class="bus-state">–</div>
+      </aside>
 
-      <main id="stage" class="stage">
-        <div class="empty">Valitse lisäosa vasemmalta.</div>
+      <main id="workspace" class="workspace" aria-label="Työpöytä">
+        <!-- panes injected here -->
       </main>
     </div>
 
     <footer class="foot">
-      Rekisteri: <code>/plugins/index.json</code> · Data: <code>/data/views/</code>
+      Raahaa moduuli vasemmalta lohkoon. Voit myös raahata lohkojen välillä. Asettelu tallentuu selaimeen.
     </footer>
 
     <script type="module" src="./host.js"></script>
