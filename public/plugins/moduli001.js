@@ -139,7 +139,7 @@ function drawPyramid(container, snapshots, core) {
   return () => { off?.(); t.destroy(); };
 }
 
-function drawRatio(container, series) {
+function drawRatio(container, series, core) {
   const wrap = d3.select(container);
   wrap.selectAll("*").remove();
   wrap.append("div").attr("class","chart-title").text("Huoltosuhde — lapset (0–14) ja eläke (65+) / työikä");
