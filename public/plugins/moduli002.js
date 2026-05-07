@@ -185,8 +185,8 @@ async function mount(host, core) {
   const root = host.querySelector(`.plugin-${ID}`);
   try {
     const data = await core.data.load("sector_spending_per_capita.json");
-    _cleanups.push(drawStack(root.querySelector(".stack"), data.series));
-    _cleanups.push(drawSmalls(root.querySelector(".smalls"), data.series));
+    _cleanups.push(drawStack(root.querySelector(".stack"), data.series, core));
+    _cleanups.push(drawSmalls(root.querySelector(".smalls"), data.series, core));
 
     // Insight-bulletit
     const grown = data.series.map(s => {
