@@ -119,13 +119,24 @@ function drawPyramid(container, snapshots, core) {
       .on("mouseleave", t.hide);
   }
   render(0);
-  slider.on("input", function(){ render(+this.value); });
+  slider.on("input", function(){
+    const idx = +this.value;
+    render(idx);
+    core?.bus?.emit("selection.year", snapshots[idx].year);
+  });
+
+  // kuuntele jaettu vuosivalinta muista moduuleista
+  const off = core?.bus?.on("selection.year", (yr, meta) => {
+    if (meta?.source === core.pluginId) return;
+    const i = years.indexOf(yr);
+    if (i >= 0) { slider.property("value", i); render(i); }
+  });
 
   wrap.append("div").attr("class","legend").html(
     `<span><i style="background:#3a5f8a"></i>Miehet</span>
      <span><i style="background:#a8401f"></i>Naiset</span>`
   );
-  return () => t.destroy();
+  return () => { off?.(); t.destroy(); };
 }
 
 function drawRatio(container, series) {
